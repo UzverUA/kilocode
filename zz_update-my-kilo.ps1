@@ -20,7 +20,6 @@ git fetch upstream
 if ($LASTEXITCODE -ne 0) { Red "Failed to fetch upstream!"; exit 1 }
 
 
-
 # 2. Update mirror branch
 Write-Host "================================`n" -ForegroundColor Cyan
 Write-Host "=== Updating upstream-mirror ===`n" -ForegroundColor Cyan
