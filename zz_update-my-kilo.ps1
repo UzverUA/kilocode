@@ -13,16 +13,16 @@ function Yellow { Write-Host $_ -ForegroundColor Yellow }
 function Red    { Write-Host $_ -ForegroundColor Red }
 
 # 1. Fetch latest official code
-Write-Host "=========================`n" -ForegroundColor Cyan
-Write-Host "=== Fetching upstream ===`n" -ForegroundColor Cyan
+Write-Host "`n=========================" -ForegroundColor Cyan
+Write-Host "=== Fetching upstream ===" -ForegroundColor Cyan
 Write-Host "=========================`n" -ForegroundColor Cyan
 git fetch upstream
 if ($LASTEXITCODE -ne 0) { Red "Failed to fetch upstream!"; exit 1 }
 
 
 # 2. Update mirror branch
-Write-Host "================================`n" -ForegroundColor Cyan
-Write-Host "=== Updating upstream-mirror ===`n" -ForegroundColor Cyan
+Write-Host "`n================================" -ForegroundColor Cyan
+Write-Host "=== Updating upstream-mirror ===" -ForegroundColor Cyan
 Write-Host "================================`n" -ForegroundColor Cyan
 git checkout $MirrorBranch 2>$null
 if ($LASTEXITCODE -ne 0) { Red "Mirror branch '$MirrorBranch' not found!"; exit 1 }
@@ -31,8 +31,8 @@ git push origin $MirrorBranch --force-with-lease
 
 
 # 3. Switch to your personal branch and merge
-Write-Host "====================================`n" -ForegroundColor Cyan
-Write-Host "=== Merging updates into my-kilo ===`n" -ForegroundColor Cyan
+Write-Host "`n====================================" -ForegroundColor Cyan
+Write-Host "=== Merging updates into my-kilo ===" -ForegroundColor Cyan
 Write-Host "====================================`n" -ForegroundColor Cyan
 git checkout $MyBranch
 git merge $MirrorBranch --no-ff
@@ -49,22 +49,22 @@ if ($LASTEXITCODE -ne 0) {
 
 
 # 4. Install/update dependencies (only if lockfile changed)
-Write-Host "====================`n" -ForegroundColor Cyan
-Write-Host "=== pnpm install ===`n" -ForegroundColor Cyan
+Write-Host "`n====================" -ForegroundColor Cyan
+Write-Host "=== pnpm install ===" -ForegroundColor Cyan
 Write-Host "====================`n" -ForegroundColor Cyan
 pnpm install
 
 
 # 5. Build the new VSIX
-Write-Host "==================`n" -ForegroundColor Cyan
-Write-Host "=== pnpm build ===`n" -ForegroundColor Cyan
+Write-Host "`n==================" -ForegroundColor Cyan
+Write-Host "=== pnpm build ===" -ForegroundColor Cyan
 Write-Host "==================`n" -ForegroundColor Cyan
 pnpm build
 
 
 # 6. Find the newest VSIX and install it automatically into VS Code
-Write-Host "=============================`n" -ForegroundColor Cyan
-Write-Host "=== Installing extensions ===`n" -ForegroundColor Cyan
+Write-Host "`n=============================" -ForegroundColor Cyan
+Write-Host "=== Installing extensions ===" -ForegroundColor Cyan
 Write-Host "=============================`n" -ForegroundColor Cyan
 $vsix = Get-ChildItem "bin\*.vsix" | Sort-Object Name -Descending | Select-Object -First 1
 if (!$vsix) {
@@ -80,12 +80,12 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 # 7. Push your updated personal branch (backup)
-Write-Host "==========================`n" -ForegroundColor Cyan
-Write-Host "=== Pushing to my-kilo ===`n" -ForegroundColor Cyan
+Write-Host "`n==========================" -ForegroundColor Cyan
+Write-Host "=== Pushing to my-kilo ===" -ForegroundColor Cyan
 Write-Host "==========================`n" -ForegroundColor Cyan
 git push origin $MyBranch
 
-Write-Host "============`n" -ForegroundColor Cyan
-Write-Host "=== DONE ===`n" -ForegroundColor Cyan
-Write-Host "============`n" -ForegroundColor Cyan
+Write-Host "`n============" -ForegroundColor Green
+Write-Host "=== DONE ===" -ForegroundColor Green
+Write-Host "============`n" -ForegroundColor Green
 pause
