@@ -181,5 +181,37 @@ export async function getAllowedJSONToolsForMode(
 		}
 	}
 
+	// Remove tools that I'm not using
+	console.log("================ before filtering allowed tools:", allowedTools)
+	const disallowedToolNames = new Set([
+		"update_todo_list",
+		"generate_image",
+		"new_task",
+		"switch_mode",
+		"browser_action",
+		"run_slash_command",
+	])
+	allowedTools = allowedTools.filter((tool) => {
+		const fnName = (tool as any).function?.name as string | undefined
+		if (!fnName) {
+			return true
+		}
+		return !ALWAYS_REMOVED_TOOLS.has(fnName)
+	})
+	console.log("================= after filtering allowed tools:", allowedTools)
+
 	return allowedTools
 }
+
+const ALWAYS_REMOVED_TOOLS = new Set([
+	"update_todo_list",
+	"generate_image",
+	"new_task",
+	"switch_mode",
+	"browser_action",
+	"execute_command",
+	"run_slash_command",
+	"list_files",
+	"list_code_definition_names",
+	"fetch_instructions",
+])
