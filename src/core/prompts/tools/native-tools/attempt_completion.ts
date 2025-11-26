@@ -5,14 +5,14 @@ export default {
 	function: {
 		name: "attempt_completion",
 		description:
-			"If you think that task is completed and no further actions are needed - use this tool to mark task as completed.",
+			"If you think that task is completed and no further actions are needed - use MUST always use this tool to mark task as completed. It's IMPORTANT to mark completed tasks.",
 		strict: true,
 		parameters: {
 			type: "object",
 			properties: {
 				result: {
 					type: "string",
-					description: "Concise, brief and to the point summary of the final result of the task.",
+					description: "Concise, brief and to the point summary of completion.",
 				},
 			},
 			required: ["result"],
