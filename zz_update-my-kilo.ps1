@@ -85,6 +85,7 @@ Write-Host "=== Pushing to my-kilo ===" -ForegroundColor Cyan
 Write-Host "==========================`n" -ForegroundColor Cyan
 git push origin $MyBranch
 
+git checkout $MyBranch
 Write-Host "`n============" -ForegroundColor Green
 Write-Host "=== DONE ===" -ForegroundColor Green
 Write-Host "============`n" -ForegroundColor Green
