@@ -16,7 +16,7 @@ function Red    { Write-Host $_ -ForegroundColor Red }
 Write-Host "`n=========================" -ForegroundColor Cyan
 Write-Host "=== Fetching upstream ===" -ForegroundColor Cyan
 Write-Host "=========================`n" -ForegroundColor Cyan
-git fetch upstream
+git fetch upstream main
 if ($LASTEXITCODE -ne 0) { Red "Failed to fetch upstream!"; exit 1 }
 
 
