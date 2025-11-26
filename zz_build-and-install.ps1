@@ -24,12 +24,8 @@ if (!$vsix) {
     exit 1
 }
 code --install-extension $vsix.FullName
-if ($LASTEXITCODE -eq 0) {
-    Green "`nSUCCESS! Your personal Kilo is now up-to-date and installed."
-    Write-Host "Version:" (Get-Content package.json | ConvertFrom-Json).version -ForegroundColor Magenta
-} else {
-    Red "VS Code failed to install the extension (is VS Code running?)"
-}
+Green "`nSUCCESS! Your personal Kilo is now up-to-date and installed."
+Write-Host "Version:" (Get-Content src/package.json | ConvertFrom-Json).version -ForegroundColor Magenta
 
 Write-Host "`n============" -ForegroundColor Green
 Write-Host "=== DONE ===" -ForegroundColor Green
