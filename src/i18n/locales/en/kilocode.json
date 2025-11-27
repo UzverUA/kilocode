@@ -170,6 +170,11 @@
 			"message": "Double-check all generated commands before running them. Terminal actions cannot always be undone— running unverified commands can result in irreversible data loss or system damage. Review and understand the command completely before proceeding!",
 			"okButton": "I Understand",
 			"cancelButton": "Cancel"
+		},
+		"creditsstatusbar": {
+			"loading": "Loading...",
+			"clickToRefresh": "Click to refresh",
+			"minute": "minute"
 		}
 	}
 }
