@@ -66,3 +66,14 @@ qdrant_storage/
 # allow multiple local clones with different workspaces with different colors
 # to make it easier to work on features in parallel
 *.code-workspace
+
+
+# ADDITIONAL STUFF BY ME
+
+# important, prevents spamming codebase indexing during kilocode development
+pnpm-lock.yaml
+README.md
+CHANGELOG.md
+LICENSE
+/src/webview-ui
+/src/assets/vscode-material-icons
