@@ -9,7 +9,7 @@ import { BaseTool, ToolCallbacks } from "./BaseTool"
 import type { ToolUse } from "../../shared/tools"
 
 interface SearchFilesParams {
-	path: string
+	path?: string
 	regex: string
 	file_pattern?: string | null
 }
@@ -19,7 +19,7 @@ export class SearchFilesTool extends BaseTool<"search_files"> {
 
 	parseLegacy(params: Partial<Record<string, string>>): SearchFilesParams {
 		return {
-			path: params.path || "",
+			path: params.path || undefined,
 			regex: params.regex || "",
 			file_pattern: params.file_pattern || undefined,
 		}
@@ -50,7 +50,7 @@ export class SearchFilesTool extends BaseTool<"search_files"> {
 
 		task.consecutiveMistakeCount = 0
 
-		const absolutePath = path.resolve(task.cwd, relDirPath)
+		const absolutePath = relDirPath ? path.resolve(task.cwd, relDirPath) : task.cwd
 		const isOutsideWorkspace = isPathOutsideWorkspace(absolutePath)
 
 		const sharedMessageProps: ClineSayTool = {

@@ -13,7 +13,7 @@ Example: Searching for all .ts files in the current directory
 Example: Searching for function definitions in JavaScript files
 { "path": "src", "regex": "function\\s+\\w+", "file_pattern": "*.js" }`
 
-const PATH_PARAMETER_DESCRIPTION = `Directory to search recursively, relative to the workspace`
+const PATH_PARAMETER_DESCRIPTION = `Directory to search recursively, relative to the workspace. If omitted, the whole repository will be searched.`
 
 const REGEX_PARAMETER_DESCRIPTION = `Rust-compatible regular expression pattern to match`
 
@@ -29,7 +29,7 @@ export default {
 			type: "object",
 			properties: {
 				path: {
-					type: "string",
+					type: ["string", "null"],
 					description: PATH_PARAMETER_DESCRIPTION,
 				},
 				regex: {

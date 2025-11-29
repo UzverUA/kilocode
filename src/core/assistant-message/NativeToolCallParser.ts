@@ -689,7 +689,7 @@ export class NativeToolCallParser {
 					break
 
 				case "search_files":
-					if (args.path !== undefined && args.regex !== undefined) {
+					if (args.regex !== undefined) {
 						nativeArgs = {
 							path: args.path,
 							regex: args.regex,
