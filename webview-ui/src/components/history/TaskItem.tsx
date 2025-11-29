@@ -51,6 +51,7 @@ const TaskItem = ({
 				{
 					"bg-red-900 text-white": item.fileNotfound, // kilocode_change added this state instead of removing
 					"bg-vscode-editor-background": !item.fileNotfound, //kilocode_change this is the default normally in the regular classname list
+					"border-1 border-dashed border-yellow-300/40": item.isFavorited && !item.fileNotfound,
 				},
 				className,
 			)}
