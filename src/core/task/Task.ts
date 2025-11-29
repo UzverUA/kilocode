@@ -2040,13 +2040,22 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 			const environmentDetails = await getEnvironmentDetails(this, currentIncludeFileDetails)
 
-			// Add environment details as its own text block, separate from tool
-			// results.
-			// kilocode_change start: support interleaved thinking for environment details
-			const finalUserContent = addOrMergeUserContent(parsedUserContent, [
-				{ type: "text" as const, text: environmentDetails },
-			])
-			// kilocode_change end
+			// CUSTOM EDIT
+			// If this is a native tool-result message, do NOT append environment details.
+			// Detection:
+			//  - If tool protocol is native AND parsedUserContent contains any tool_result
+			//    blocks, we assume this iteration is sending tool results back to the API
+			//    and must not contain environment_details.
+			const toolProtocol = getActiveToolUseStyle(this.apiConfiguration)
+			const isNativeToolProtocol = isNativeProtocol(toolProtocol)
+
+			const containsToolResult =
+				Array.isArray(parsedUserContent) && parsedUserContent.some((b: any) => b && b.type === "tool_result")
+
+			const finalUserContent =
+				isNativeToolProtocol && containsToolResult
+					? parsedUserContent
+					: addOrMergeUserContent(parsedUserContent, [{ type: "text" as const, text: environmentDetails }])
 
 			// Only add user message to conversation history if:
 			// 1. This is the first attempt (retryAttempt === 0), OR

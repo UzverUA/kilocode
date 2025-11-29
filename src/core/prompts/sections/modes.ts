@@ -18,6 +18,7 @@ MODES
 
 - These are the currently available modes:
 ${allModes
+	.filter((mode: ModeConfig) => mode.name === "Code")
 	.map((mode: ModeConfig) => {
 		let description: string
 		if (mode.whenToUse && mode.whenToUse.trim() !== "") {
@@ -31,12 +32,8 @@ ${allModes
 	})
 	.join("\n")}`
 
-	modesContent += `
-If the user asks you to create or edit a new mode for this project, you should read the instructions by using the fetch_instructions tool, like this:
-<fetch_instructions>
-<task>create_mode</task>
-</fetch_instructions>
-`
+	// kilocode_change: toolUseStyle
+	// modesContent += `If the user asks you to create or edit a new mode for this project, you should read the instructions by using the fetch_instructions tool${toolUseStyle !== "json" ? ", like this:\n<fetch_instructions>\n<task>create_mode</task>\n</fetch_instructions>" : "."}`
 
 	return modesContent
 }

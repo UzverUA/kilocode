@@ -65,7 +65,6 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 
 	// It could be useful for cline to know if the user went from one or no
 	// file to another between messages, so we always include this context.
-	details += "\n\n# VSCode Visible Files"
 
 	const visibleFilePaths = vscode.window.visibleTextEditors
 		?.map((editor) => editor.document?.uri?.fsPath)
@@ -76,15 +75,16 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 	// Filter paths through rooIgnoreController
 	const allowedVisibleFiles = cline.rooIgnoreController
 		? cline.rooIgnoreController.filterPaths(visibleFilePaths)
-		: visibleFilePaths.map((p) => p.toPosix()).join("\n")
+		: visibleFilePaths.map((p) => p.toPosix())
 
-	if (allowedVisibleFiles) {
-		details += `\n${allowedVisibleFiles}`
+	if (allowedVisibleFiles && allowedVisibleFiles.length > 0) {
+		details += "\n\n# VSCode Visible Files"
+		details += `\n${allowedVisibleFiles.join("\n")}\n\n`
 	} else {
-		details += "\n(No visible files)"
+		// details += "\n(No visible files)"
 	}
 
-	details += "\n\n# VSCode Open Tabs"
+	details += "# VSCode Open Tabs"
 	const { maxOpenTabsContext } = state ?? {}
 	const maxTabs = maxOpenTabsContext ?? 20
 	const openTabPaths = vscode.window.tabGroups.all
@@ -98,10 +98,10 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 	// Filter paths through rooIgnoreController
 	const allowedOpenTabs = cline.rooIgnoreController
 		? cline.rooIgnoreController.filterPaths(openTabPaths)
-		: openTabPaths.map((p) => p.toPosix()).join("\n")
+		: openTabPaths.map((p) => p.toPosix())
 
-	if (allowedOpenTabs) {
-		details += `\n${allowedOpenTabs}`
+	if (allowedOpenTabs && allowedOpenTabs.length > 0) {
+		details += `\n${allowedOpenTabs.join("\n")}`
 	} else {
 		details += "\n(No open tabs)"
 	}
@@ -291,7 +291,8 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 		}
 	}
 
-	if (includeFileDetails) {
+	const maxFiles = maxWorkspaceFiles ?? 200
+	if (includeFileDetails && maxFiles > 0) {
 		details += `\n\n# Current Workspace Directory (${cline.cwd.toPosix()}) Files\n`
 		const isDesktop = arePathsEqual(cline.cwd, path.join(os.homedir(), "Desktop"))
 
@@ -300,8 +301,6 @@ export async function getEnvironmentDetails(cline: Task, includeFileDetails: boo
 			// permission popup.
 			details += "(Desktop files not shown automatically. Use list_files to explore if needed.)"
 		} else {
-			const maxFiles = maxWorkspaceFiles ?? 200
-
 			// Early return for limit of 0
 			if (maxFiles === 0) {
 				details += "(Workspace files context disabled. Use list_files to explore if needed.)"

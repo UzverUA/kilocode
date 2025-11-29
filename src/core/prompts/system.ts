@@ -134,8 +134,6 @@ ${getToolUseGuidelinesSection(codeIndexManager, effectiveProtocol)}
 
 ${mcpServersSection}
 
-${getCapabilitiesSection(cwd, supportsComputerUse, mode, customModeConfigs, experiments, shouldIncludeMcp ? mcpHub : undefined, effectiveDiffStrategy, codeIndexManager, settings, clineProviderState /* kilocode_change */)}
-
 ${modesSection}
 
 ${getRulesSection(cwd, supportsComputerUse, mode, customModeConfigs, experiments, effectiveDiffStrategy, codeIndexManager, settings, clineProviderState /* kilocode_change */)}

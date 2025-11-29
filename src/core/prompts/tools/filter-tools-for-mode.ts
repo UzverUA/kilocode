@@ -16,6 +16,20 @@ import { isFastApplyAvailable } from "../../tools/kilocode/editFileTool"
 import { ManagedIndexer } from "../../../services/code-index/managed/ManagedIndexer"
 // kilocode_change end
 
+const ALWAYS_REMOVED_TOOLS = new Set([
+	"attempt_completion",
+	"update_todo_list",
+	"generate_image",
+	"new_task",
+	"switch_mode",
+	"browser_action",
+	"execute_command",
+	"run_slash_command",
+	"list_files",
+	"list_code_definition_names",
+	"fetch_instructions",
+])
+
 /**
  * Filters native tools based on mode restrictions.
  * This ensures native tools are filtered the same way XML tools are filtered in the system prompt.
@@ -115,6 +129,9 @@ export function filterNativeToolsForMode(
 	}
 	// kilocode_change end
 
+	// Filter out always-removed tools
+	ALWAYS_REMOVED_TOOLS.forEach((tool) => allowedToolNames.delete(tool))
+
 	// Filter native tools based on allowed tool names
 	return nativeTools.filter((tool) => {
 		// Handle both ChatCompletionTool and ChatCompletionCustomTool
@@ -146,6 +163,11 @@ export function isToolAllowedInMode(
 	settings?: Record<string, any>,
 ): boolean {
 	const modeSlug = mode ?? defaultModeSlug
+
+	// Check if the tool is in the always-removed list
+	if (ALWAYS_REMOVED_TOOLS.has(toolName)) {
+		return false
+	}
 
 	// Check if it's an always-available tool
 	if (ALWAYS_AVAILABLE_TOOLS.includes(toolName)) {
