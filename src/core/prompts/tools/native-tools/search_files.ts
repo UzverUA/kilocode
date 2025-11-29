@@ -9,13 +9,14 @@ export default {
 		parameters: {
 			type: "object",
 			properties: {
-				path: {
-					type: "string",
-					description: "Directory to search recursively, relative to the workspace",
-				},
 				regex: {
 					type: "string",
 					description: "Rust-compatible regular expression pattern to match",
+				},
+				path: {
+					type: ["string", "null"],
+					description:
+						"Directory to search recursively, relative to the workspace. If omitted, the repository root will be searched.",
 				},
 				file_pattern: {
 					type: ["string", "null"],
