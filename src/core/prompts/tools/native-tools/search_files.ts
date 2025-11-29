@@ -10,8 +10,8 @@ export default {
 			type: "object",
 			properties: {
 				path: {
-					type: "string",
-					description: "Directory to search recursively, relative to the workspace",
+					type: ["string", "null"],
+					description: "Directory to search recursively, relative to the workspace. If omitted, the whole repository will be searched.",
 				},
 				regex: {
 					type: "string",
@@ -19,7 +19,7 @@ export default {
 				},
 				file_pattern: {
 					type: ["string", "null"],
-					description: "Optional glob to limit which files are searched (e.g., *.ts)",
+					description: `Optional glob to limit which files are searched (e.g., *.ts)`,
 				},
 			},
 			required: ["path", "regex", "file_pattern"],
