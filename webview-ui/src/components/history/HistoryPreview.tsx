@@ -39,11 +39,11 @@ const HistoryPreview = ({ taskHistoryVersion }: { taskHistoryVersion: number } /
 				</button>
 			</div>
 			{tasks.length !== 0 && (
-				<>
+				<div className="overflow-y-auto p-2 space-y-2" style={{ maxHeight: "calc(100vh - 380px)" }}>
 					{tasks.slice(0, 10).map((item) => (
 						<TaskItem key={item.id} item={item} variant="compact" onDelete={(id) => setDeleteTaskId(id)} />
 					))}
-				</>
+				</div>
 			)}
 			{deleteTaskId && (
 				<DeleteTaskDialog taskId={deleteTaskId} open onOpenChange={(open) => !open && setDeleteTaskId(null)} />
