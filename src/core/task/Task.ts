@@ -88,6 +88,7 @@ import { formatResponse } from "../prompts/responses"
 import { SYSTEM_PROMPT } from "../prompts/system"
 import { nativeTools, getMcpServerTools } from "../prompts/tools/native-tools"
 import { filterNativeToolsForMode, filterMcpToolsForMode } from "../prompts/tools/filter-tools-for-mode"
+import { attemptCompletionTool, AttemptCompletionCallbacks } from "../tools/AttemptCompletionTool"
 
 // core modules
 import { ToolRepetitionDetector } from "../tools/ToolRepetitionDetector"
@@ -2785,14 +2786,103 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 					// either use a tool or attempt_completion.
 					const didToolUse = this.assistantMessageContent.some((block) => block.type === "tool_use")
 
+					// If the model did not tool use, invoke attempt_completion via the tool handler
 					if (!didToolUse) {
-						this.userMessageContent.push({
-							type: "text",
-							text: formatResponse.noToolsUsed(
-								getActiveToolUseStyle(this.apiConfiguration), // kilocode_change
-							),
-						})
-						this.consecutiveMistakeCount++
+						const completionText =
+							(assistantMessage || "").trim() ||
+							formatResponse.noToolsUsed(getActiveToolUseStyle(this.apiConfiguration))
+
+						// pushToolResult pushes either string or content blocks into userMessageContent
+						const pushToolResult = (content: string | Array<any>) => {
+							if (typeof content === "string") {
+								this.userMessageContent.push({ type: "text", text: content })
+							} else if (Array.isArray(content)) {
+								this.userMessageContent.push(...content)
+							}
+						}
+
+						const removeClosingTag = (_tag: string, text?: string) => text || ""
+
+						const handleError = async (action: string, error: Error) => {
+							await this.say("error", `Error ${action}:\n${error.message ?? JSON.stringify(error)}`)
+							pushToolResult(formatResponse.toolError(error.message ?? String(error)))
+						}
+
+						const askApproval = async (
+							type: any,
+							partialMessage?: string,
+							progressStatus?: ToolProgressStatus,
+							isProtected?: boolean,
+						) => {
+							const { response, text, images } = await this.ask(
+								type,
+								partialMessage,
+								false,
+								progressStatus,
+								!!isProtected,
+							)
+
+							if (response !== "yesButtonClicked") {
+								if (text) {
+									await this.say("user_feedback", text, images)
+									pushToolResult(
+										formatResponse.toolResult(formatResponse.toolDeniedWithFeedback(text), images),
+									)
+								} else {
+									pushToolResult(formatResponse.toolDenied())
+								}
+								this.didRejectTool = true
+								return false
+							}
+
+							if (text) {
+								await this.say("user_feedback", text, images)
+								pushToolResult(
+									formatResponse.toolResult(formatResponse.toolApprovedWithFeedback(text), images),
+								)
+							}
+
+							return true
+						}
+
+						const askFinishSubTaskApproval = async () => {
+							const toolMessage = JSON.stringify({ tool: "finishTask" })
+							return askApproval("tool", toolMessage)
+						}
+
+						const toolDescription = () => `[attempt_completion]`
+
+						const callbacks: AttemptCompletionCallbacks = {
+							askApproval,
+							handleError,
+							pushToolResult,
+							removeClosingTag,
+							askFinishSubTaskApproval,
+							toolDescription,
+						}
+
+						const block = {
+							type: "tool_use",
+							name: "attempt_completion",
+							params: { result: completionText },
+							partial: false,
+						} as any
+
+						// Execute the real tool handler so we get the full attempt_completion flow
+						await attemptCompletionTool.handle(this, block, callbacks)
+
+						// If the tool produced user content (via pushToolResult), queue it for processing
+						if (this.userMessageContent.length > 0) {
+							stack.push({
+								userContent: [...this.userMessageContent],
+								includeFileDetails: false,
+							})
+							// yield to avoid blocking
+							await new Promise((resolve) => setImmediate(resolve))
+						}
+
+						// Continue with normal loop processing (do not return true / end loop here)
+						continue
 					}
 
 					if (this.userMessageContent.length > 0) {
