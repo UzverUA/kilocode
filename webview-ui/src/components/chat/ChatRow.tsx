@@ -1428,9 +1428,9 @@ export const ChatRowContent = ({
 								</div>
 								{/* kilocode_change end */}
 							</div>
-							<div className="border-l border-green-600/30 ml-2 pl-4 pb-1">
+							{/* <div className="border-l border-green-600/30 ml-2 pl-4 pb-1">
 								<Markdown markdown={message.text} />
-							</div>
+							</div> */}
 							{
 								// kilocode_change start
 								!message.partial && enableCheckpoints !== false && commitRange ? (

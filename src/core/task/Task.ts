@@ -88,6 +88,7 @@ import { calculateApiCostAnthropic, calculateApiCostOpenAI } from "../../shared/
 import { getWorkspacePath } from "../../utils/path"
 
 // prompts
+import { attemptCompletionTool, AttemptCompletionCallbacks } from "../tools/AttemptCompletionTool"
 import { formatResponse } from "../prompts/responses"
 import { SYSTEM_PROMPT } from "../prompts/system"
 import { buildNativeToolsArray } from "./build-tools"
@@ -2406,7 +2407,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			// kilocode_change start: support interleaved thinking for environment details
 			// CUSTOM EDIT: If this is a tool-result message, do NOT append environment details.
 			const containsToolResult =
-				Array.isArray(contentWithoutEnvDetails) && contentWithoutEnvDetails.some((b: any) => b && b.type === "tool_result")
+				Array.isArray(contentWithoutEnvDetails) &&
+				contentWithoutEnvDetails.some((b: any) => b && b.type === "tool_result")
 			const finalUserContent = containsToolResult
 				? contentWithoutEnvDetails
 				: addOrMergeUserContent(contentWithoutEnvDetails, [{ type: "text" as const, text: environmentDetails }])
@@ -3377,12 +3379,105 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 						(block) => block.type === "tool_use" || block.type === "mcp_tool_use",
 					)
 
+					// If the model did not tool use, invoke attempt_completion via the tool handler
 					if (!didToolUse) {
 						const modelInfo = this.api.getModel().info
-						const state = await this.providerRef.deref()?.getState()
 						const toolProtocol = resolveToolProtocol(this.apiConfiguration, modelInfo)
-						this.userMessageContent.push({ type: "text", text: formatResponse.noToolsUsed(toolProtocol) })
-						this.consecutiveMistakeCount++
+						const completionText =
+							(assistantMessage || "").trim() || formatResponse.noToolsUsed(toolProtocol)
+
+						// pushToolResult pushes either string or content blocks into userMessageContent
+						const pushToolResult = (content: string | Array<any>) => {
+							if (typeof content === "string") {
+								this.userMessageContent.push({ type: "text", text: content })
+							} else if (Array.isArray(content)) {
+								this.userMessageContent.push(...content)
+							}
+						}
+
+						const removeClosingTag = (_tag: string, text?: string) => text || ""
+
+						const handleError = async (action: string, error: Error) => {
+							await this.say("error", `Error ${action}:\n${error.message ?? JSON.stringify(error)}`)
+							pushToolResult(formatResponse.toolError(error.message ?? String(error)))
+						}
+
+						const askApproval = async (
+							type: any,
+							partialMessage?: string,
+							progressStatus?: ToolProgressStatus,
+							isProtected?: boolean,
+						) => {
+							const { response, text, images } = await this.ask(
+								type,
+								partialMessage,
+								false,
+								progressStatus,
+								!!isProtected,
+							)
+
+							if (response !== "yesButtonClicked") {
+								if (text) {
+									await this.say("user_feedback", text, images)
+									pushToolResult(
+										formatResponse.toolResult(formatResponse.toolDeniedWithFeedback(text), images),
+									)
+								} else {
+									pushToolResult(formatResponse.toolDenied())
+								}
+								this.didRejectTool = true
+								return false
+							}
+
+							if (text) {
+								await this.say("user_feedback", text, images)
+								pushToolResult(
+									formatResponse.toolResult(formatResponse.toolApprovedWithFeedback(text), images),
+								)
+							}
+
+							return true
+						}
+
+						const askFinishSubTaskApproval = async () => {
+							const toolMessage = JSON.stringify({ tool: "finishTask" })
+							return askApproval("tool", toolMessage)
+						}
+
+						const toolDescription = () => `[attempt_completion]`
+
+						const callbacks: AttemptCompletionCallbacks = {
+							askApproval,
+							handleError,
+							pushToolResult,
+							removeClosingTag,
+							askFinishSubTaskApproval,
+							toolDescription,
+							toolProtocol,
+						}
+
+						const block = {
+							type: "tool_use",
+							name: "attempt_completion",
+							params: { result: completionText },
+							partial: false,
+						} as any
+
+						// Execute the real tool handler so we get the full attempt_completion flow
+						await attemptCompletionTool.handle(this, block, callbacks)
+
+						// If the tool produced user content (via pushToolResult), queue it for processing
+						if (this.userMessageContent.length > 0) {
+							stack.push({
+								userContent: [...this.userMessageContent],
+								includeFileDetails: false,
+							})
+							// yield to avoid blocking
+							await new Promise((resolve) => setImmediate(resolve))
+						}
+
+						// Continue with normal loop processing (do not return true / end loop here)
+						continue
 					}
 
 					// Push to stack if there's content OR if we're paused waiting for a subtask.
