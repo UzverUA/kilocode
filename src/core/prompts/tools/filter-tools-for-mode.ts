@@ -14,6 +14,7 @@ import type { CodeIndexManager } from "../../../services/code-index/manager"
 import { ClineProviderState } from "../../webview/ClineProvider"
 import { isFastApplyAvailable } from "../../tools/kilocode/editFileTool"
 import { ManagedIndexer } from "../../../services/code-index/managed/ManagedIndexer"
+import { all } from "axios"
 // kilocode_change end
 
 const ALWAYS_REMOVED_TOOLS = new Set([
@@ -128,6 +129,15 @@ export function filterNativeToolsForMode(
 		allowedToolNames.delete("edit_file")
 	}
 	// kilocode_change end
+
+	if (modeSlug === "researcher") {
+		allowedToolNames.delete("agentic_search")
+		allowedToolNames.delete("ask_followup_question")
+	} else {
+		// if any other mode - remove all search related tools but agentic search
+		allowedToolNames.delete("codebase_search")
+		allowedToolNames.delete("search_files")
+	}
 
 	// Filter out always-removed tools
 	ALWAYS_REMOVED_TOOLS.forEach((tool) => allowedToolNames.delete(tool))
