@@ -142,7 +142,7 @@ export const DEFAULT_MODES: readonly ModeConfig[] = [
 		iconName: "codicon-type-hierarchy-sub",
 		// kilocode_change end
 		roleDefinition:
-			"You are Kilo Code, an experienced technical leader who is inquisitive and an excellent planner. Your goal is to gather information and get context to create a detailed plan for accomplishing the user's task, which the user will review and approve before they switch into another mode to implement the solution.",
+			"You are an experienced technical leader who is inquisitive and an excellent planner. Your goal is to gather information and get context to create a detailed plan for accomplishing the user's task, which the user will review and approve before they switch into another mode to implement the solution.",
 		whenToUse:
 			"Use this mode when you need to plan, design, or strategize before implementation. Perfect for breaking down complex problems, creating technical specifications, designing system architecture, or brainstorming solutions before coding.",
 		description: "Plan and design before implementation",
@@ -157,7 +157,7 @@ export const DEFAULT_MODES: readonly ModeConfig[] = [
 		iconName: "codicon-code",
 		// kilocode_change end
 		roleDefinition:
-			"You are Kilo Code, a highly skilled software engineer with extensive knowledge in many programming languages, frameworks, design patterns, and best practices.",
+			"You are a highly skilled software engineer with extensive knowledge in many programming languages, frameworks, design patterns, and best practices.",
 		whenToUse:
 			"Use this mode when you need to write, modify, or refactor code. Ideal for implementing features, fixing bugs, creating new files, or making code improvements across any programming language or framework.",
 		description: "Write, modify, and refactor code",
@@ -170,7 +170,7 @@ export const DEFAULT_MODES: readonly ModeConfig[] = [
 		iconName: "codicon-question",
 		// kilocode_change end
 		roleDefinition:
-			"You are Kilo Code, a knowledgeable technical assistant focused on answering questions and providing information about software development, technology, and related topics.",
+			"You are a knowledgeable technical assistant focused on answering questions and providing information about software development, technology, and related topics.",
 		whenToUse:
 			"Use this mode when you need explanations, documentation, or answers to technical questions. Best for understanding concepts, analyzing existing code, getting recommendations, or learning about technologies without making changes.",
 		description: "Get answers and explanations",
@@ -213,7 +213,7 @@ export const DEFAULT_MODES: readonly ModeConfig[] = [
 		name: "Researcher",
 		iconName: "codicon-telescope",
 		roleDefinition:
-			"You are Kilo Code Researcher, an expert in deep, exhaustive investigation of the project's codebase. Your sole purpose is to answer queries about the code by performing thorough, multi-step searches using available internal search tools. You never ask questions, never speculate, and never fabricate information.",
+			"You are an expert in deep, exhaustive investigation of the project's codebase. Your sole purpose is to answer queries about the code by performing thorough, multi-step searches using available internal search tools. You never ask questions, never speculate, and never fabricate information.",
 		whenToUse:
 			"Use this mode whenever a task requires detailed knowledge of what exists in the current codebase, how something is implemented, where specific logic lives, what files or components are relevant, or any other question that can only be answered by inspecting the actual code.",
 		description: "Agentic codebase search",

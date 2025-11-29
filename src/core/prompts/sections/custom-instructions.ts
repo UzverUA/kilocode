@@ -378,9 +378,9 @@ export async function addCustomInstructions(
 		}
 	}
 
-	if (options.rooIgnoreInstructions) {
-		rules.push(options.rooIgnoreInstructions)
-	}
+	// if (options.rooIgnoreInstructions) {
+	// 	rules.push(options.rooIgnoreInstructions)
+	// }
 
 	// Add AGENTS.md content if enabled (default: true)
 	if (options.settings?.useAgentRules !== false) {
