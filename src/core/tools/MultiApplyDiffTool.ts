@@ -20,7 +20,7 @@ import * as vscode from "vscode"
 import { ToolProtocol, isNativeProtocol } from "@roo-code/types"
 import { Package } from "../../shared/package"
 import { getActiveToolUseStyle } from "../../api/providers/kilocode/nativeToolCallHelpers"
-import { searchAndReplaceTool } from "./kilocode/searchAndReplaceTool"
+import { resolveToolProtocol } from "../../utils/resolveToolProtocol"
 
 export interface DiffOperation {
 	path: string
