@@ -17,9 +17,10 @@ import searchFiles from "./search_files"
 import switchMode from "./switch_mode"
 import updateTodoList from "./update_todo_list"
 import writeToFile from "./write_to_file"
-// import { apply_diff_single_file } from "./apply_diff" // kilocode_change
+import { apply_diff_single_file } from "./apply_diff" // kilocode_change
 
-import searchAndReplace from "./kilocode/search_and_replace"
+// legacy block diff tool enabled
+// import searchAndReplace from "./kilocode/search_and_replace"
 import deleteFile from "./kilocode/delete_file"
 import editFile from "./kilocode/edit_file"
 
@@ -28,7 +29,7 @@ export { convertOpenAIToolToAnthropic, convertOpenAIToolsToAnthropic } from "./c
 
 export const nativeTools = [
 	// kilocode_change start
-	searchAndReplace,
+	apply_diff_single_file,
 	deleteFile,
 	editFile,
 	// todo:
