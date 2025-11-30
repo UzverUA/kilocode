@@ -22,34 +22,3 @@ export default {
 		parameters: z.toJSONSchema(SearchAndReplaceParametersSchema),
 	},
 } satisfies OpenAI.Chat.ChatCompletionTool
-
-// A string containing one or more search/replace blocks defining the changes. The ':start_line:' is required and indicates the starting line number of the original content. You must not add a start line for the replacement content, only for SEARCH.
-// Each block must follow this format:
-// <<<<<<< SEARCH
-// :start_line:[line_number]
-// -------
-// [exact content to find]
-// =======
-// [new content to replace with]
-// >>>>>>> REPLACE
-
-// Example:
-// <<<<<<< SEARCH
-// :start_line:10
-// -------
-// export function add(a: number, b: number) {
-//     return a + b;
-// }
-// =======
-// export function add(a: number, b: number): number {
-//     // Added explicit return type
-//     return a + b;
-// }
-// >>>>>>> REPLACE
-// <<<<<<< SEARCH
-// :start_line:45
-// -------
-//     console.log("Debug info");
-// =======
-//     // console.log("Debug info");
-// >>>>>>> REPLACE
