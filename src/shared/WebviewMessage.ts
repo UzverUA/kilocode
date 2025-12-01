@@ -432,12 +432,16 @@ export interface ProfileDataResponsePayload {
 	data?: ProfileData
 	error?: string
 }
+export interface BalanceData {
+	balance: number
+}
 
 export interface BalanceDataResponsePayload {
 	// New: Payload for balance data
 	success: boolean
-	data?: any // Replace 'any' with a more specific type if known for balance
+	data?: BalanceData // Replace 'any' with a more specific type if known for balance
 	error?: string
+	isLoading?: boolean
 }
 
 export interface SeeNewChangesPayload {

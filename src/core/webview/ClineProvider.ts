@@ -56,7 +56,7 @@ import type { ExtensionMessage, ExtensionState, MarketplaceInstalledMetadata } f
 import { Mode, defaultModeSlug, getModeBySlug } from "../../shared/modes"
 import { experimentDefault } from "../../shared/experiments"
 import { formatLanguage } from "../../shared/language"
-import { WebviewMessage } from "../../shared/WebviewMessage"
+import { WebviewMessage, BalanceDataResponsePayload } from "../../shared/WebviewMessage"
 import { EMBEDDING_MODEL_PROFILES } from "../../shared/embeddingModels"
 import { ProfileValidator } from "../../shared/ProfileValidator"
 
@@ -102,6 +102,7 @@ import { readTaskMessages } from "../task-persistence/taskMessages"
 import { getNonce } from "./getNonce"
 import { getUri } from "./getUri"
 import { REQUESTY_BASE_URL } from "../../shared/utils/requesty"
+import { getKiloBaseUriFromToken } from "@roo-code/types"
 
 //kilocode_change start
 import { McpDownloadResponse, McpMarketplaceCatalog } from "../../shared/kilocode/mcp"
@@ -161,10 +162,12 @@ export class ClineProvider
 	private taskCreationCallback: (task: Task) => void
 	private taskEventListeners: WeakMap<Task, Array<() => void>> = new WeakMap()
 	private currentWorkspacePath: string | undefined
+	private creditsStatusBar?: any
 	private autoPurgeScheduler?: any // kilocode_change - (Any) Prevent circular import
 	private deviceAuthHandler?: DeviceAuthHandler // kilocode_change - Device auth handler
 
 	private recentTasksCache?: string[]
+	private balanceHandlers: Array<(data: BalanceDataResponsePayload) => void> = []
 	private pendingOperations: Map<string, PendingEditOperation> = new Map()
 	private static readonly PENDING_OPERATION_TIMEOUT_MS = 30000 // 30 seconds
 
@@ -1515,6 +1518,10 @@ ${prompt}
 		return !!this.getProviderProfileEntry(name)
 	}
 
+	public setCreditsStatusBar(creditsStatusBar: any): void {
+		this.creditsStatusBar = creditsStatusBar
+	}
+
 	async upsertProviderProfile(
 		name: string,
 		providerSettings: ProviderSettings,
@@ -1547,6 +1554,17 @@ ${prompt}
 					this.providerSettingsManager.setModeConfig(mode, id),
 					this.contextProxy.setProviderSettings(providerSettings),
 				])
+
+				// Credits widget edits start
+				const oldOrgId = this.contextProxy.getProviderSettings().kilocodeOrganizationId
+				const newOrgId = providerSettings.kilocodeOrganizationId
+				if (oldOrgId !== newOrgId && this.creditsStatusBar) {
+					this.log(
+						`[upsertProviderProfile] Organization ID changed from ${oldOrgId} to ${newOrgId}, notifying CreditsStatusBar`,
+					)
+					await this.creditsStatusBar.clearAndRefresh()
+				}
+				// Credits widget edits end
 
 				// Change the provider for the current task.
 				// TODO: We should rename `buildApiHandler` for clarity (e.g. `getProviderClient`).
@@ -3704,6 +3722,95 @@ Here is the project's README to help you get started:\n\n${mcpDetails.readmeCont
 
 	public getTaskHistory(): HistoryItem[] {
 		return this.getGlobalState("taskHistory") || []
+	}
+
+	/**
+	 * Register a balance data handler that will be called when balance data is fetched
+	 * @param handler - Function to call with balance data
+	 * @returns Disposable that can be used to unregister the handler
+	 */
+	public registerBalanceHandler(handler: (data: BalanceDataResponsePayload) => void): vscode.Disposable {
+		this.balanceHandlers.push(handler)
+
+		return new vscode.Disposable(() => {
+			const index = this.balanceHandlers.indexOf(handler)
+			if (index > -1) {
+				this.balanceHandlers.splice(index, 1)
+			}
+		})
+	}
+
+	/**
+	 * Fetch balance data from the Kilo Code API
+	 * @returns Promise with BalanceDataResponsePayload
+	 */
+	public async fetchBalanceData(): Promise<BalanceDataResponsePayload> {
+		try {
+			const { apiConfiguration } = await this.getState()
+			const { kilocodeToken, kilocodeOrganizationId } = apiConfiguration
+
+			if (!kilocodeToken) {
+				const error = "No Kilo Code token available"
+				this.log(`[fetchBalanceData] ${error}`)
+				const result: BalanceDataResponsePayload = { success: false, error }
+				this.balanceHandlers.forEach((handler) => handler(result))
+				return result
+			}
+
+			const baseUrl = getKiloBaseUriFromToken(kilocodeToken)
+			const url = `${baseUrl}/api/profile/balance`
+
+			this.log(`[fetchBalanceData] Fetching balance from: ${url}`)
+
+			const response = await axios.get(url, {
+				headers: {
+					Authorization: `Bearer ${kilocodeToken}`,
+					"Content-Type": "application/json",
+					"X-KiloCode-OrganizationId": kilocodeOrganizationId,
+				},
+				timeout: 10000,
+			})
+
+			if (response.data) {
+				const result: BalanceDataResponsePayload = {
+					success: true,
+					data: response.data,
+				}
+
+				// Notify all registered handlers
+				this.balanceHandlers.forEach((handler) => {
+					try {
+						handler(result)
+					} catch (error) {
+						this.log(`[fetchBalanceData] Error in balance handler: ${error}`)
+					}
+				})
+
+				this.log(`[fetchBalanceData] Successfully fetched balance data`)
+				return result
+			} else {
+				throw new Error("Invalid response from balance API")
+			}
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : String(error)
+			this.log(`[fetchBalanceData] Error fetching balance: ${errorMessage}`)
+
+			const result: BalanceDataResponsePayload = {
+				success: false,
+				error: errorMessage,
+			}
+
+			// Notify all registered handlers of the error
+			this.balanceHandlers.forEach((handler) => {
+				try {
+					handler(result)
+				} catch (handlerError) {
+					this.log(`[fetchBalanceData] Error in balance handler: ${handlerError}`)
+				}
+			})
+
+			return result
+		}
 	}
 	// kilocode_change end
 

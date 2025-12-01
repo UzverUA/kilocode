@@ -24,6 +24,7 @@ import { formatLanguage } from "./shared/language"
 import { ContextProxy } from "./core/config/ContextProxy"
 import { ClineProvider } from "./core/webview/ClineProvider"
 import { DIFF_VIEW_URI_SCHEME } from "./integrations/editor/DiffViewProvider"
+import { CreditsStatusBar } from "./core/kilocode/CreditsStatusBar"
 import { TerminalRegistry } from "./integrations/terminal/TerminalRegistry"
 import { McpServerManager } from "./services/mcp/McpServerManager"
 import { CodeIndexManager } from "./services/code-index/manager"
@@ -336,6 +337,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Finish initializing the provider.
 	TelemetryService.instance.setProvider(provider)
+
+	// credits status bar initialization start
+	const creditsStatusBar = new CreditsStatusBar(context, provider)
+	await creditsStatusBar.initialize()
+	context.subscriptions.push(creditsStatusBar)
+	provider.setCreditsStatusBar(creditsStatusBar) // Set the credits status bar reference in the provider so it can notify on organization changes
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(ClineProvider.sideBarId, provider, {
