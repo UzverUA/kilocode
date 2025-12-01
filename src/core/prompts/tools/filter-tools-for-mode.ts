@@ -12,6 +12,20 @@ import { isFastApplyAvailable } from "../../tools/kilocode/editFileTool"
 import { ManagedIndexer } from "../../../services/code-index/managed/ManagedIndexer"
 // kilocode_change end
 
+const ALWAYS_REMOVED_TOOLS = new Set([
+	"attempt_completion",
+	"update_todo_list",
+	"generate_image",
+	"new_task",
+	"switch_mode",
+	"browser_action",
+	"execute_command",
+	"run_slash_command",
+	"list_files",
+	"list_code_definition_names",
+	"fetch_instructions",
+])
+
 /**
  * Apply model-specific tool customization to a set of allowed tools.
  *
@@ -185,7 +199,31 @@ export function filterNativeToolsForMode(
 	if (!mcpHub || !hasAnyMcpResources(mcpHub)) {
 		allowedToolNames.delete("access_mcp_resource")
 	}
-
+	
+	if (modeSlug === "researcher") {
+		allowedToolNames.delete("agentic_search")
+		allowedToolNames.delete("ask_followup_question")
+	} else if (modeSlug === "diff_apply") {
+		allowedToolNames.delete("agentic_apply_diff")
+		allowedToolNames.delete("agentic_search")
+		allowedToolNames.delete("ask_followup_question")
+		allowedToolNames.delete("codebase_search")
+		allowedToolNames.delete("search_files")
+	} else if (modeSlug == "code") {
+		allowedToolNames.delete("apply_diff")
+		allowedToolNames.delete("codebase_search")
+		allowedToolNames.delete("search_files")
+	} else if (modeSlug === "architect") {
+		allowedToolNames.delete("codebase_search")
+		allowedToolNames.delete("search_files")
+		allowedToolNames.delete("agentic_apply_diff")
+	} else {
+		// if any other mode - remove all search related tools but agentic search
+		allowedToolNames.delete("codebase_search")
+		allowedToolNames.delete("search_files")
+	}
+	// Both filter blocks are important to prevent exposure or execution in any context.
+	ALWAYS_REMOVED_TOOLS.forEach((tool) => allowedToolNames.delete(tool))
 	// Filter native tools based on allowed tool names
 	return nativeTools.filter((tool) => {
 		// Handle both ChatCompletionTool and ChatCompletionCustomTool
@@ -225,6 +263,11 @@ export function isToolAllowedInMode(
 	settings?: Record<string, any>,
 ): boolean {
 	const modeSlug = mode ?? defaultModeSlug
+
+	// Both filter blocks are important to prevent exposure or execution in any context.
+	if (ALWAYS_REMOVED_TOOLS.has(toolName)) {
+		return false
+	}
 
 	// Check if it's an always-available tool
 	if (ALWAYS_AVAILABLE_TOOLS.includes(toolName)) {
