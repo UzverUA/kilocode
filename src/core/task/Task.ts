@@ -2075,9 +2075,12 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			// Add environment details as its own text block, separate from tool
 			// results.
 			// kilocode_change start: support interleaved thinking for environment details
-			const finalUserContent = addOrMergeUserContent(parsedUserContent, [
-				{ type: "text" as const, text: environmentDetails },
-			])
+			// CUSTOM EDIT: If this is a tool-result message, do NOT append environment details.
+			const containsToolResult =
+				Array.isArray(parsedUserContent) && parsedUserContent.some((b: any) => b && b.type === "tool_result")
+			const finalUserContent = containsToolResult
+				? parsedUserContent
+				: addOrMergeUserContent(parsedUserContent, [{ type: "text" as const, text: environmentDetails }])
 			// kilocode_change end
 
 			// Only add user message to conversation history if:
