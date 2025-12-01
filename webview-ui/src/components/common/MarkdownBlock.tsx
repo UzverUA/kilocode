@@ -83,7 +83,7 @@ const StyledMarkdown = styled.div`
 		"Helvetica Neue",
 		sans-serif;
 
-	font-size: var(--vscode-font-size, 13px);
+	font-size: calc(var(--vscode-font-size, 13px) * 1.1);
 
 	p,
 	li,
