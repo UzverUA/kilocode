@@ -1,10 +1,10 @@
-import { memo } from "react"
+import React, { memo, useState } from "react"
 
 import { vscode } from "@src/utils/vscode"
 import { useAppTranslation } from "@src/i18n/TranslationContext"
 
-// import { useTaskSearch } from "./useTaskSearch" // kilocode_change
 import TaskItem from "./TaskItem"
+import { DeleteTaskDialog } from "./DeleteTaskDialog"
 import { useTaskHistory } from "@/kilocode/hooks/useTaskHistory"
 
 const HistoryPreview = ({ taskHistoryVersion }: { taskHistoryVersion: number } /*kilocode_change*/) => {
@@ -21,6 +21,7 @@ const HistoryPreview = ({ taskHistoryVersion }: { taskHistoryVersion: number } /
 	const tasks = data?.historyItems ?? []
 	// kilocode_change end
 	const { t } = useAppTranslation()
+	const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null)
 
 	const handleViewAllHistory = () => {
 		vscode.postMessage({ type: "switchTab", tab: "history" })
@@ -40,9 +41,12 @@ const HistoryPreview = ({ taskHistoryVersion }: { taskHistoryVersion: number } /
 			{tasks.length !== 0 && (
 				<div className="overflow-y-auto space-y-2">
 					{tasks.slice(0, 10).map((item) => (
-						<TaskItem key={item.id} item={item} variant="compact" />
+						<TaskItem key={item.id} item={item} variant="compact" onDelete={(id) => setDeleteTaskId(id)} />
 					))}
 				</div>
+			)}
+			{deleteTaskId && (
+				<DeleteTaskDialog taskId={deleteTaskId} open onOpenChange={(open) => !open && setDeleteTaskId(null)} />
 			)}
 		</div>
 	)
