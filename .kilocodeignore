@@ -1,0 +1,5 @@
+package.*.json
+**/i18n/
+**/__tests__/
+**/cli/
+**/jetbrains/

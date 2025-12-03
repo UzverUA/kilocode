@@ -69,3 +69,13 @@ qdrant_storage/
 
 # Act Secret Files
 .secrets
+
+# ADDITIONAL STUFF BY ME
+/spec/
+# important, prevents spamming codebase indexing during kilocode development
+pnpm-lock.yaml
+README.md
+CHANGELOG.md
+LICENSE
+/src/webview-ui
+/src/assets/vscode-material-icons
