@@ -10,6 +10,7 @@ import insertContent from "./insert_content"
 import listCodeDefinitionNames from "./list_code_definition_names"
 import listFiles from "./list_files"
 import newTask from "./new_task"
+import agentic_search from "./agentic_search"
 import { read_file } from "./read_file"
 import runSlashCommand from "./run_slash_command"
 import searchFiles from "./search_files"
@@ -46,6 +47,7 @@ export const nativeTools = [
 	listCodeDefinitionNames,
 	listFiles,
 	newTask,
+		agentic_search,
 	read_file,
 	runSlashCommand,
 	searchFiles,

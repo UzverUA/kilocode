@@ -268,6 +268,7 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	attempt_completion: "complete tasks",
 	switch_mode: "switch modes",
 	new_task: "create new task",
+	agentic_search: "perform agentic search",
 	insert_content: "insert content",
 	new_rule: "create new rule",
 	codebase_search: "codebase search",
@@ -320,6 +321,7 @@ export const ALWAYS_AVAILABLE_TOOLS: ToolName[] = [
 	"attempt_completion",
 	"switch_mode",
 	"new_task",
+	"agentic_search",
 	"report_bug",
 	"condense", // kilocode_Change
 	"update_todo_list",
