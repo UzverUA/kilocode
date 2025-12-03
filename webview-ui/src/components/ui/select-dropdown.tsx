@@ -75,6 +75,60 @@ export const SelectDropdown = React.memo(
 			const searchInputRef = React.useRef<HTMLInputElement>(null)
 			const portalContainer = useRooPortal("roo-portal")
 
+			// Wheel handling: allow cycling selectable options by mouse wheel when
+			// hovering over the trigger while the dropdown is closed.
+			const lastWheelTimestampRef = React.useRef<number>(0)
+			const WHEEL_COOLDOWN_MS = 10
+
+			const handleWheelOnTrigger = React.useCallback(
+				(e: React.WheelEvent) => {
+					// Only handle wheel when dropdown is closed and not disabled.
+					if (open || disabled) return
+					const deltaY = e.deltaY
+					if (!deltaY) return
+					const now = Date.now()
+					if (now - lastWheelTimestampRef.current < WHEEL_COOLDOWN_MS) {
+						e.preventDefault()
+						return
+					}
+					lastWheelTimestampRef.current = now
+					// Prevent page scroll while changing modes
+					e.preventDefault()
+
+					// Only cycle through selectable "item" options (exclude separators,
+					// shortcuts, actions and disabled options).
+					const selectableOptions = options.filter(
+						(opt) =>
+							opt.type !== DropdownOptionType.SEPARATOR &&
+							opt.type !== DropdownOptionType.SHORTCUT &&
+							opt.type !== DropdownOptionType.ACTION &&
+							!opt.disabled,
+					)
+					if (selectableOptions.length === 0) return
+
+					const currentIndex = Math.max(
+						0,
+						selectableOptions.findIndex((opt) => opt.value === value),
+					)
+					let nextIndex = currentIndex
+					if (deltaY > 0 && currentIndex < selectableOptions.length - 1) {
+						nextIndex = currentIndex + 1
+					} else if (deltaY < 0 && currentIndex > 0) {
+						nextIndex = currentIndex - 1
+					} else {
+						// At boundary, do nothing
+						return
+					}
+					const nextValue = selectableOptions[nextIndex].value
+
+					onChange(nextValue)
+					// Keep dropdown closed and clear any search state.
+					setSearchValue("")
+					setOpen(false)
+				},
+				[open, disabled, options, value, onChange],
+			)
+
 			// kilocode_change start
 			const TriggerIcon = triggerIcon === false ? null : triggerIcon === true ? CaretUpIcon : triggerIcon
 			// kilocode_change end
@@ -202,6 +256,7 @@ export const SelectDropdown = React.memo(
 					ref={ref}
 					disabled={disabled}
 					data-testid="dropdown-trigger"
+					onWheel={handleWheelOnTrigger}
 					className={cn(
 						"w-full min-w-0 max-w-full inline-flex items-center gap-1.5 relative whitespace-nowrap px-1.5 py-1 text-xs",
 						"bg-transparent border border-[rgba(255,255,255,0.08)] rounded-md text-vscode-foreground w-auto",
