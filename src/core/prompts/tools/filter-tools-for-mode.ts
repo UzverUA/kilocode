@@ -144,6 +144,10 @@ export function filterNativeToolsForMode(
 		allowedToolNames.delete("delete_file")
 	} else if (modeSlug == "code") {
 		allowedToolNames.delete("apply_diff")
+		allowedToolNames.delete("codebase_search")
+		allowedToolNames.delete("search_files")
+	} else if (modeSlug === "architect") {
+		allowedToolNames.delete("agentic_apply_diff")
 	} else {
 		// if any other mode - remove all search related tools but agentic search
 		allowedToolNames.delete("codebase_search")
