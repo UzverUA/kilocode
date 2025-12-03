@@ -7,6 +7,7 @@ import { DeleteButton } from "./DeleteButton"
 import { FavoriteButton } from "../kilocode/history/FavoriteButton" // kilocode_change
 import { KiloShareSessionButton } from "./KiloShareSessionButton" // kilocode_change
 import { StandardTooltip } from "../ui/standard-tooltip"
+import { formatLargeNumber } from "@src/utils/format"
 
 export interface TaskItemFooterProps {
 	item: HistoryItem
@@ -28,6 +29,10 @@ const TaskItemFooter: React.FC<TaskItemFooterProps> = ({ item, variant, isSelect
 				{!!item.totalCost && (
 					<span className="flex items-center" data-testid="cost-footer-compact">
 						{"$" + item.totalCost.toFixed(3)}
+						<i className="codicon codicon-arrow-up text-xs pl-3 font-bold" />
+						{formatLargeNumber(item.tokensIn)}
+						<i className="codicon codicon-arrow-down text-xs pl-1  font-bold" />
+						{formatLargeNumber(item.tokensOut)}
 					</span>
 				)}
 			</div>
