@@ -986,7 +986,8 @@ export class SessionManager {
 	}
 
 	async generateTitle(uiMessages: ClineMessage[]) {
-		const rawText = this.getFirstMessageText(uiMessages)
+		// TEMPORARY - until title generation makes sense - do not send useless requests!
+		const rawText = this.getFirstMessageText(uiMessages, true)
 
 		if (!rawText) {
 			return null
