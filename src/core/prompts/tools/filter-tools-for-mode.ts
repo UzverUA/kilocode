@@ -10,6 +10,7 @@ import type { McpHub } from "../../../services/mcp/McpHub"
 import { ClineProviderState } from "../../webview/ClineProvider"
 import { isFastApplyAvailable } from "../../tools/kilocode/editFileTool"
 import { ManagedIndexer } from "../../../services/code-index/managed/ManagedIndexer"
+import { all } from "axios"
 // kilocode_change end
 
 const ALWAYS_REMOVED_TOOLS = new Set([
