@@ -140,7 +140,7 @@ const KiloTaskHeader = ({
 							/>
 							{condenseButton}
 							<ShareButton item={currentTaskItem} disabled={buttonsDisabled} />
-							{!!totalCost && <span>${totalCost.toFixed(2)}</span>}
+							{!!totalCost && <span>${totalCost.toFixed(3)}</span>}
 						</div>
 					</div>
 				)}

@@ -27,7 +27,7 @@ const TaskItemFooter: React.FC<TaskItemFooterProps> = ({ item, variant, isSelect
 				{/* Cost */}
 				{!!item.totalCost && (
 					<span className="flex items-center" data-testid="cost-footer-compact">
-						{"$" + item.totalCost.toFixed(2)}
+						{"$" + item.totalCost.toFixed(3)}
 					</span>
 				)}
 			</div>
