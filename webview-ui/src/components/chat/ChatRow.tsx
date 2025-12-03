@@ -76,6 +76,7 @@ import { InvalidModelWarning } from "../kilocode/chat/InvalidModelWarning"
 import { formatFileSize } from "@/lib/formatting-utils"
 import ChatTimestamps from "./ChatTimestamps"
 import { removeLeadingNonAlphanumeric } from "@/utils/removeLeadingNonAlphanumeric"
+import { formatLargeNumber } from "@/utils/format"
 import { KILOCODE_TOKEN_REQUIRED_ERROR } from "@roo/kilocode/errorUtils"
 // kilocode_change end
 
@@ -253,20 +254,23 @@ export const ChatRowContent = ({
 	}, [message.ts])
 
 	// kilocode_change: usageMissing, inferenceProvider
-	const [cost, usageMissing, inferenceProvider, apiReqCancelReason, apiReqStreamingFailedMessage] = useMemo(() => {
-		if (message.text !== null && message.text !== undefined && message.say === "api_req_started") {
-			const info = safeJsonParse<ClineApiReqInfo>(message.text)
-			return [
-				info?.cost,
-				info?.usageMissing,
-				info?.inferenceProvider,
-				info?.cancelReason,
-				info?.streamingFailedMessage,
-			]
-		}
+	const [cost, usageMissing, inferenceProvider, apiReqCancelReason, apiReqStreamingFailedMessage, tokensIn] =
+		useMemo(() => {
+			if (message.text !== null && message.text !== undefined && message.say === "api_req_started") {
+				const info = safeJsonParse<ClineApiReqInfo>(message.text)
+				console.log(info)
+				return [
+					info?.cost,
+					info?.usageMissing,
+					info?.inferenceProvider,
+					info?.cancelReason,
+					info?.streamingFailedMessage,
+					info?.tokensIn,
+				]
+			}
 
-		return [undefined, undefined, undefined]
-	}, [message.text, message.say])
+			return [undefined, undefined, undefined]
+		}, [message.text, message.say])
 
 	// kilocode_change start: hide cost display check
 	const { hideCostBelowThreshold } = useExtensionState()
@@ -1234,9 +1238,10 @@ export const ChatRowContent = ({
 									{/* kilocode_change end */}
 								</div>
 								<div
-									className="text-xs text-vscode-dropdown-foreground border-vscode-dropdown-border/50 border px-1.5 py-0.5 rounded-lg"
+									className="text-xs  text-vscode-dropdown-foreground border-vscode-dropdown-border/50 border px-1.5 py-0.5 rounded-lg"
 									style={{ opacity: shouldShowCost ? 1 : 0 }}>
-									${Number(cost || 0)?.toFixed(4)}
+									{formatLargeNumber(tokensIn || 0)} &nbsp;&nbsp;∣&nbsp;&nbsp; $
+									{Number(cost || 0)?.toFixed(4)}
 								</div>
 								{
 									// kilocode_change start
