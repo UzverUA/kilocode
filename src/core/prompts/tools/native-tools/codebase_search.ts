@@ -1,6 +1,10 @@
 import type OpenAI from "openai"
 
-const CODEBASE_SEARCH_DESCRIPTION = `Find files most relevant to the search query using semantic search. Searches based on meaning rather than exact text matches. By default searches entire workspace. Reuse the user's exact wording unless there's a clear reason not to - their phrasing often helps semantic search. Queries MUST be in English (translate if needed).
+const CODEBASE_SEARCH_DESCRIPTION = `Find snippets of code and text that are most relevant to the search query using semantic search. 
+- Searches based on semanitc similarity rather than exact text matches. 
+- By default searches entire workspace. 
+- While this is semantic search, using the specific class names, function names, or technical terms provides the best results.
+- Do NOT combine unrelated topics. If you need to find "User Login" AND "Database Settings," make TWO separate tool calls. Combined queries result in poor search.
 
 Parameters:
 - query: (required) The search query. Reuse the user's exact wording/question format unless there's a clear reason not to.
