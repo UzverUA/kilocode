@@ -13,6 +13,7 @@ import listCodeDefinitionNames from "./list_code_definition_names"
 import listFiles from "./list_files"
 import newTask from "./new_task"
 import agentic_search from "./agentic_search"
+import agentic_apply_diff from "./agentic_apply_diff"
 import { createReadFileTool } from "./read_file"
 import runSlashCommand from "./run_slash_command"
 import searchAndReplace from "./search_and_replace"
@@ -36,6 +37,7 @@ export { convertOpenAIToolToAnthropic, convertOpenAIToolsToAnthropic } from "./c
 export function getNativeTools(partialReadsEnabled: boolean = true): OpenAI.Chat.ChatCompletionTool[] {
 	return [
 		agentic_search,
+		agentic_apply_diff,
 		// kilocode_change start
 		deleteFile,
 		editFile,

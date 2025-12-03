@@ -930,6 +930,7 @@ export const ChatRowContent = ({
 						</div>
 					</>
 				)
+			case "agenticDiffApply":
 			case "agenticSearch":
 			case "newTask":
 				return (

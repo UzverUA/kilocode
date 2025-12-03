@@ -44,6 +44,7 @@ export const toolNames = [
 	"run_slash_command",
 	"generate_image",
 	"agentic_search",
+	"agentic_apply_diff",
 ] as const
 
 export const toolNamesSchema = z.enum(toolNames)

@@ -290,6 +290,7 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	switch_mode: "switch modes",
 	new_task: "create new task",
 	agentic_search: "perform agentic search",
+	agentic_apply_diff: "perform agentic diff apply",
 	new_rule: "create new rule",
 	codebase_search: "codebase search",
 	update_todo_list: "update todo list",
@@ -317,6 +318,7 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 			"delete_file", // kilocode_change
 			"new_rule", // kilocode_change
 			"generate_image",
+			"agentic_apply_diff",
 		],
 		customTools: ["search_and_replace", "apply_patch"],
 	},
