@@ -269,6 +269,7 @@ export const TOOL_DISPLAY_NAMES: Record<ToolName, string> = {
 	switch_mode: "switch modes",
 	new_task: "create new task",
 	agentic_search: "perform agentic search",
+	agentic_apply_diff: "perform agentic diff apply",
 	insert_content: "insert content",
 	new_rule: "create new rule",
 	codebase_search: "codebase search",
@@ -298,6 +299,7 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 			"insert_content",
 			"new_rule", // kilocode_change
 			"generate_image",
+			"agentic_apply_diff",
 		],
 	},
 	browser: {

@@ -76,6 +76,9 @@ export const ToolRouter: React.FC<ToolMessageProps> = ({ message, toolData }) =>
 		case "agentic_search":
 			return <ToolNewTaskMessage message={message} toolData={toolData} />
 
+		case "agentic_apply_diff":
+			return <ToolNewTaskMessage message={message} toolData={toolData} />
+
 		case "finishTask":
 			return <ToolFinishTaskMessage message={message} toolData={toolData} />
 

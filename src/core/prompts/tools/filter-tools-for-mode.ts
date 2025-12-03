@@ -133,6 +133,17 @@ export function filterNativeToolsForMode(
 	if (modeSlug === "researcher") {
 		allowedToolNames.delete("agentic_search")
 		allowedToolNames.delete("ask_followup_question")
+	} else if (modeSlug === "diff_apply") {
+		allowedToolNames.delete("agentic_apply_diff")
+		allowedToolNames.delete("agentic_search")
+		allowedToolNames.delete("ask_followup_question")
+		allowedToolNames.delete("codebase_search")
+		allowedToolNames.delete("search_files")
+		allowedToolNames.delete("insert_content")
+		allowedToolNames.delete("write_to_file")
+		allowedToolNames.delete("delete_file")
+	} else if (modeSlug == "code") {
+		allowedToolNames.delete("apply_diff")
 	} else {
 		// if any other mode - remove all search related tools but agentic search
 		allowedToolNames.delete("codebase_search")

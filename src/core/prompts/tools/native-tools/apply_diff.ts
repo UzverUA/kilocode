@@ -39,7 +39,7 @@ CRITICAL PRE-REQUISITES:
 FORMATTING RULES:
 - Structure: Use the specific delimiters \`<<<<<<< SEARCH\`, \`-------\`, \`=======\`, and \`>>>>>>> REPLACE\`.
 - Delimiter Placement: Each delimiter must be on its own line with no extra spaces or characters!
-- Ensure every delimiter line is constructed using a precise sequence of exactly *7*  repeating symbols. You must strictly adhere to this fixed length, as the parser rigidly enforces the seven-character requirement for all boundary markers.
+- Ensure every delimiter line is constructed using a precise sequence of exactly *7* repeating symbols. You must strictly adhere to this fixed length, as the parser rigidly enforces the seven-character requirement for all boundary markers.
 - Line Numbers: The \`:start_line:[number]\` is mandatory in the SEARCH block. This line is used to locate the text and validates uniqueness.
 - No Lazy Matching: Never use \`...\`, \`// rest of code\`, or placeholders in the SEARCH block. You must provide the literal code.
 - Multiple Edits: You can (and should) include multiple SEARCH/REPLACE blocks in a single \`diff\` string to make multiple changes to one file in one go.

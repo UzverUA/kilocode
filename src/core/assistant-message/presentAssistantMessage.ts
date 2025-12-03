@@ -28,6 +28,7 @@ import { switchModeTool } from "../tools/SwitchModeTool"
 import { attemptCompletionTool, AttemptCompletionCallbacks } from "../tools/AttemptCompletionTool"
 import { newTaskTool } from "../tools/NewTaskTool"
 import { agenticSearchTool } from "../tools/AgenticSearchTool"
+import { agenticDiffApplyTool } from "../tools/AgenticDiffApplyTool"
 
 import { updateTodoListTool } from "../tools/UpdateTodoListTool"
 import { runSlashCommandTool } from "../tools/RunSlashCommandTool"
@@ -751,6 +752,14 @@ export async function presentAssistantMessage(cline: Task) {
 					break
 				case "agentic_search":
 					await agenticSearchTool.handle(cline, block as ToolUse<"agentic_search">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+					})
+					break
+				case "agentic_apply_diff":
+					await agenticDiffApplyTool.handle(cline, block as ToolUse<"agentic_apply_diff">, {
 						askApproval,
 						handleError,
 						pushToolResult,
