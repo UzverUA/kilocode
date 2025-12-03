@@ -664,6 +664,15 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		return [instance, promise]
 	}
 
+	/**
+	 * Start the task manually. This is used by ClineProvider when creating tasks
+	 * that require a mode/profile switch before the initial user message is sent.
+	 * It simply delegates to the private `startTask` method.
+	 */
+	public async startTaskManually(taskText?: string, images?: string[]): Promise<void> {
+		return this.startTask(taskText, images)
+	}
+
 	// API Messages
 
 	private async getSavedApiConversationHistory(): Promise<ApiMessage[]> {
@@ -1856,14 +1865,16 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			throw new Error("Provider not available")
 		}
 
-		const newTask = await provider.createTask(message, undefined, this, { initialTodos })
+		// Pass the desired mode into createTask so that the provider can switch
+		// to the target mode before the subtask's first API call.
+		const newTask = await provider.createTask(message, undefined, this, {
+			initialTodos,
+			targetModeSlug: mode,
+		} as any)
 
 		if (newTask) {
 			this.isPaused = true // Pause parent.
 			this.childTaskId = newTask.taskId
-
-			await provider.handleModeSwitch(mode) // Set child's mode.
-			await delay(500) // Allow mode change to take effect.
 
 			this.emit(RooCodeEventName.TaskPaused, this.taskId)
 			this.emit(RooCodeEventName.TaskSpawned, newTask.taskId)

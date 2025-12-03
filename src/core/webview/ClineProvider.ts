@@ -3015,6 +3015,8 @@ ${prompt}
 			}
 		}
 
+		// Retrieve full state object so we can access customModes when switching mode
+		const state = await this.getState()
 		const {
 			apiConfiguration,
 			organizationAllowList,
@@ -3025,12 +3027,15 @@ ${prompt}
 			experiments,
 			cloudUserInfo,
 			remoteControlEnabled,
-		} = await this.getState()
+		} = state
 
 		if (!ProfileValidator.isProfileAllowed(apiConfiguration, organizationAllowList)) {
 			throw new OrganizationAllowListViolationError(t("common:errors.violated_organization_allowlist"))
 		}
 
+		// Create the task instance without starting it. We'll start it manually after
+		// performing a mode switch (if requested) so the initial user message is
+		// sent under the correct mode/profile.
 		const task = new Task({
 			provider: this,
 			context: this.context, // kilocode_change
@@ -3050,9 +3055,33 @@ ${prompt}
 			enableBridge: BridgeOrchestrator.isEnabled(cloudUserInfo, remoteControlEnabled),
 			initialTodos: options.initialTodos,
 			...options,
+			// Ensure the constructor does not auto-start the task so we can switch mode first
+			startTask: false,
 		})
 
 		await this.addClineToStack(task)
+
+		// If caller requested a specific mode for this new task, switch to it while
+		// the new task is on top of the stack so that handleModeSwitch updates the
+		// correct task and the task's API handler is rebuilt accordingly.
+		const targetModeSlug = (options as any).targetModeSlug as string | undefined
+		if (targetModeSlug) {
+			const targetMode = getModeBySlug(targetModeSlug, state?.customModes)
+			if (targetMode) {
+				await this.handleModeSwitch(targetModeSlug)
+			}
+		}
+
+		// Start the task now that the provider mode/profile (and thus task.api)
+		// are correct. Start asynchronously to preserve previous behavior (the
+		// constructor previously launched the startTask without awaiting it).
+		if ((text && text.trim()) || (images && images.length > 0)) {
+			void task.startTaskManually(text, images).catch((err) => {
+				this.log(
+					`[createTask] startTask failed for ${task.taskId}: ${err instanceof Error ? err.message : String(err)}`,
+				)
+			})
+		}
 
 		this.log(
 			`[createTask] ${task.parentTask ? "child" : "parent"} task ${task.taskId}.${task.instanceId} instantiated`,
