@@ -75,8 +75,10 @@ const TaskItem = ({
 				<div className="flex-1 min-w-0">
 					<div
 						className={cn(
-							"overflow-hidden whitespace-pre-wrap text-vscode-foreground text-ellipsis line-clamp-3",
+							"overflow-hidden whitespace-pre-wrap text-ellipsis",
 							{
+								"text-vscode-foreground line-clamp-3": !(isCompact && item.parentTaskId),
+								"text-vscode-descriptionForeground line-clamp-1 font-light": item.parentTaskId,
 								"text-base": !isCompact,
 							},
 							!isCompact && isSelectionMode ? "mb-1" : "",
