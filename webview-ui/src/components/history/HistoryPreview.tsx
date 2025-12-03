@@ -19,6 +19,8 @@ const HistoryPreview = ({ taskHistoryVersion }: { taskHistoryVersion: number } /
 		taskHistoryVersion,
 	)
 	const tasks = data?.historyItems ?? []
+	// filter out subtasks from recent view
+	const rootTasks = tasks.filter((item) => item.parentTaskId === undefined)
 	// kilocode_change end
 	const { t } = useAppTranslation()
 	const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null)
@@ -38,9 +40,9 @@ const HistoryPreview = ({ taskHistoryVersion }: { taskHistoryVersion: number } /
 					{t("history:viewAllHistory")}
 				</button>
 			</div>
-			{tasks.length !== 0 && (
+			{rootTasks.length !== 0 && (
 				<div className="overflow-y-auto space-y-2">
-					{tasks.slice(0, 10).map((item) => (
+					{rootTasks.slice(0, 10).map((item) => (
 						<TaskItem key={item.id} item={item} variant="compact" onDelete={(id) => setDeleteTaskId(id)} />
 					))}
 				</div>
