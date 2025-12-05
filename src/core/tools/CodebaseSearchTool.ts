@@ -1,5 +1,9 @@
 import * as vscode from "vscode"
 import path from "path"
+// Debug Start
+import os from "os"
+import fs from "fs/promises"
+// Debug end
 
 import { Task } from "../task/Task"
 import { CodeIndexManager } from "../../services/code-index/manager"
@@ -189,6 +193,21 @@ export class CodebaseSearchTool extends BaseTool<"codebase_search"> {
 				})
 			})
 
+			// Debug Start
+			const outputData = {
+				query,
+				documents: jsonResult.results.map((r) => r.codeChunk),
+			}
+			const sanitizedQuery = query
+				.replace(/[^a-zA-Z0-9\s]/g, "")
+				.replace(/\s+/g, "_")
+				.slice(0, 50)
+				.trim()
+			const filename = sanitizedQuery ? `${sanitizedQuery}.txt` : "search_results.txt"
+			const desktopPath = path.join(os.homedir(), "Desktop", filename)
+			await fs.writeFile(desktopPath, JSON.stringify(outputData, null, 2))
+			// Debug end
+
 			const payload = { tool: "codebaseSearch", content: jsonResult }
 			await task.say("codebase_search_result", JSON.stringify(payload))
 
@@ -274,6 +293,21 @@ async function tryManagedSearch(
 				codeChunk: result.payload.codeChunk.trim(),
 			})
 		})
+
+		// Debug Start
+		const outputData = {
+			query,
+			documents: jsonResult.results.map((r) => r.codeChunk),
+		}
+		const sanitizedQuery = query
+			.replace(/[^a-zA-Z0-9\s]/g, "")
+			.replace(/\s+/g, "_")
+			.slice(0, 50)
+			.trim()
+		const filename = sanitizedQuery ? `${sanitizedQuery}.txt` : "search_results.txt"
+		const desktopPath = path.join(os.homedir(), "Desktop", filename)
+		await fs.writeFile(desktopPath, JSON.stringify(outputData, null, 2))
+		// Debug end
 
 		// Send results to UI
 		const payload = { tool: "codebaseSearch", content: jsonResult }
