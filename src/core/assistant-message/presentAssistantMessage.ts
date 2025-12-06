@@ -583,10 +583,10 @@ export async function presentAssistantMessage(cline: Task) {
 					await checkpointSaveAndMark(cline)
 
 					// kilocode_change start: use search and replace tool
-					if (isNative) {
-						await searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult)
-						break
-					}
+					// if (isNative) {
+					// 	await searchAndReplaceTool(cline, block, askApproval, handleError, pushToolResult)
+					// 	break
+					// }
 					// kilocode_change end
 
 					// Get the provider and state to check experiment settings
