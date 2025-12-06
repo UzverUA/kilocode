@@ -1369,7 +1369,7 @@ export const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					// kilocode_change: combine placeholderText and placeholderBottomText here
 					placeholder={`${placeholderText}\n${placeholderBottomText}`}
 					minRows={3}
-					maxRows={15}
+					maxRows={70}
 					autoFocus={true}
 					className={cn(
 						"w-full",
