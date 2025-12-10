@@ -55,7 +55,7 @@ const TaskItem = ({
 				className,
 			)}
 			onClick={handleClick}>
-			<div className={(!isCompact && isSelectionMode ? "pl-3 pb-3" : "pl-4") + " flex gap-3 px-3 pt-3 pb-1"}>
+			<div className={(!isCompact && isSelectionMode ? "pl-2 pb-2" : "pl-3") + " flex gap-3 px-2 pt-2 pb-0"}>
 				{/* Selection checkbox - only in full variant */}
 				{!isCompact && isSelectionMode && (
 					<div
@@ -74,7 +74,7 @@ const TaskItem = ({
 				<div className="flex-1 min-w-0">
 					<div
 						className={cn(
-							"overflow-hidden whitespace-pre-wrap font-light text-vscode-foreground text-ellipsis line-clamp-3",
+							"overflow-hidden whitespace-pre-wrap font-[350] text-vscode-foreground text-ellipsis line-clamp-3",
 							{
 								"text-base": !isCompact,
 							},
