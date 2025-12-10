@@ -38,11 +38,11 @@ const HistoryPreview = ({ taskHistoryVersion }: { taskHistoryVersion: number } /
 				</button>
 			</div>
 			{tasks.length !== 0 && (
-				<>
-					{tasks.slice(0, 4).map((item) => (
+				<div className="overflow-y-auto space-y-2">
+					{tasks.slice(0, 10).map((item) => (
 						<TaskItem key={item.id} item={item} variant="compact" />
 					))}
-				</>
+				</div>
 			)}
 		</div>
 	)
