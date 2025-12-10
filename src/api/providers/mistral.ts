@@ -11,6 +11,7 @@ import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import { streamSse } from "../../services/continuedev/core/fetch/stream"
 
 // Type helper to handle thinking chunks from Mistral API
 // The SDK includes ThinkChunk but TypeScript has trouble with the discriminated union
@@ -207,6 +208,57 @@ export class MistralHandler extends BaseProvider implements SingleCompletionHand
 			}
 
 			throw error
+		}
+	}
+
+	supportsFim(): boolean {
+		const modelId = this.getModel().id ?? "none"
+		return modelId.includes("codestral")
+	}
+
+	async *streamFim(prefix: string, suffix: string, _taskId?: string): AsyncGenerator<string> {
+		const { id: model, info } = this.getModel()
+
+		// Hard gate: only allow FIM if this is a Codestral model
+		if (!model.includes("codestral")) {
+			throw new Error("FIM is only supported for Codestral models")
+		}
+
+		// Use Codestral base URL, like in the constructor
+		const baseUrl = this.options.mistralCodestralUrl || "https://codestral.mistral.ai"
+		const endpoint = new URL("v1/fim/completions", baseUrl.endsWith("/") ? baseUrl : baseUrl + "/")
+
+		const temperature = 0.2
+		const maxTokens = 256
+
+		const response = await fetch(endpoint.toString(), {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				Authorization: `Bearer ${this.options.mistralApiKey}`,
+			},
+			body: JSON.stringify({
+				model,
+				prompt: prefix,
+				suffix,
+				max_tokens: Math.min(maxTokens, info.maxTokens ?? maxTokens),
+				temperature,
+				stream: true,
+			}),
+		})
+
+		if (!response.ok) {
+			const errorText = await response.text()
+			throw new Error(`Mistral FIM streaming failed: ${response.status} ${response.statusText} - ${errorText}`)
+		}
+
+		// Stream text from FIM SSE, similar style to KiloCode
+		for await (const data of streamSse(response)) {
+			const content = data.choices?.[0]?.delta?.content
+			if (content) {
+				yield content
+			}
 		}
 	}
 }

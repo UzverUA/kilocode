@@ -6,6 +6,7 @@ import { CompletionUsage } from "../../api/providers/openrouter"
 import { ApiStreamChunk } from "../../api/transform/stream"
 import { AUTOCOMPLETE_PROVIDER_MODELS, checkKilocodeBalance } from "./utils/kilocode-utils"
 import { KilocodeOpenrouterHandler } from "../../api/providers/kilocode-openrouter"
+import { MistralHandler } from "../../api/providers/mistral"
 import { PROVIDERS } from "../../../webview-ui/src/components/settings/constants"
 import { ResponseMetaData } from "./types"
 
@@ -85,7 +86,7 @@ export class GhostModel {
 			return false
 		}
 
-		if (this.apiHandler instanceof KilocodeOpenrouterHandler) {
+		if (this.apiHandler instanceof KilocodeOpenrouterHandler || this.apiHandler instanceof MistralHandler) {
 			return this.apiHandler.supportsFim()
 		}
 
@@ -106,8 +107,8 @@ export class GhostModel {
 			throw new Error("API handler is not initialized. Please check your configuration.")
 		}
 
-		if (!(this.apiHandler instanceof KilocodeOpenrouterHandler)) {
-			throw new Error("FIM is only supported for KiloCode provider")
+		if (!(this.apiHandler instanceof KilocodeOpenrouterHandler || this.apiHandler instanceof MistralHandler)) {
+			throw new Error("FIM is only supported for KiloCode and Mistral providers")
 		}
 
 		if (!this.apiHandler.supportsFim()) {
@@ -124,7 +125,8 @@ export class GhostModel {
 			onChunk(chunk)
 		}
 
-		const cost = usage ? this.apiHandler.getTotalCost(usage) : 0
+		// if mistral handler - return zero, it doesn't have get totalCose
+		const cost = usage ? (this.apiHandler instanceof MistralHandler ? 0 : this.apiHandler.getTotalCost(usage)) : 0
 		const inputTokens = usage?.prompt_tokens ?? 0
 		const outputTokens = usage?.completion_tokens ?? 0
 		const cacheReadTokens = usage?.prompt_tokens_details?.cached_tokens ?? 0
