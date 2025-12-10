@@ -1571,7 +1571,7 @@ const ChatViewComponent: React.ForwardRefRenderFunction<ChatViewRef, ChatViewPro
 						)}
 						<div className="flex flex-grow flex-col justify-center gap-4">
 							{/* kilocode_change end */}
-							<p className="text-vscode-editor-foreground leading-normal font-vscode-font-family text-center text-balance max-w-[380px] mx-auto my-0">
+							<p className="hidden text-vscode-editor-foreground leading-normal font-vscode-font-family text-center text-balance max-w-[380px] mx-auto my-0">
 								<Trans
 									i18nKey="chat:about"
 									components={{
