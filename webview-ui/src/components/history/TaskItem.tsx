@@ -41,6 +41,7 @@ const TaskItem = ({
 	}
 
 	const isCompact = variant === "compact"
+	const isFavorited = item.isFavorited
 
 	return (
 		<div
@@ -55,7 +56,12 @@ const TaskItem = ({
 				className,
 			)}
 			onClick={handleClick}>
-			<div className={(!isCompact && isSelectionMode ? "pl-2 pb-2" : "pl-3") + " flex gap-3 px-2 pt-2 pb-0"}>
+			<div
+				className={
+					(!isCompact && isSelectionMode ? "pl-2 pb-2" : "pl-3") +
+					" flex gap-3 px-2 pt-2 pb-0  border-2 " +
+					(isFavorited ? "border-dashed border-yellow-300/40" : "border-[#1e2931]")
+				}>
 				{/* Selection checkbox - only in full variant */}
 				{!isCompact && isSelectionMode && (
 					<div
