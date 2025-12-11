@@ -2,6 +2,7 @@ import * as path from "path"
 import { VectorStoreSearchResult } from "./interfaces"
 import { IEmbedder } from "./interfaces/embedder"
 import { IVectorStore } from "./interfaces/vector-store"
+import { ICodeIndexReranker, RerankerDocument, RerankerResult } from "./interfaces/reranker"
 import { CodeIndexConfigManager } from "./config-manager"
 import { CodeIndexStateManager } from "./state-manager"
 import { TelemetryService } from "@roo-code/telemetry"
@@ -16,6 +17,7 @@ export class CodeIndexSearchService {
 		private readonly stateManager: CodeIndexStateManager,
 		private readonly embedder: IEmbedder,
 		private readonly vectorStore: IVectorStore,
+		private readonly reranker?: ICodeIndexReranker | null,
 	) {}
 
 	/**
@@ -56,7 +58,116 @@ export class CodeIndexSearchService {
 
 			// Perform search
 			const results = await this.vectorStore.search(vector, normalizedPrefix, minScore, maxResults)
-			return results
+
+			// Decide if reranking should be applied
+			if (!this.reranker || !results || results.length === 0 || this.configManager.isKiloOrgMode) {
+				console.log("Skipping reranking due to conditions:", {
+					hasReranker: !!this.reranker,
+					hasResults: !!results,
+					resultsLength: results?.length,
+					isKiloOrgMode: this.configManager.isKiloOrgMode,
+				})
+				return results
+			}
+
+			try {
+				const reranker = this.reranker
+				if (!reranker) {
+					return results
+				}
+
+				// Build reranker documents from valid payloads
+				const documents: RerankerDocument[] = []
+				for (let i = 0; i < results.length; i++) {
+					const result = results[i]
+					const payload = result.payload as any
+					if (
+						!payload ||
+						typeof payload.filePath !== "string" ||
+						typeof payload.codeChunk !== "string" ||
+						typeof payload.startLine !== "number" ||
+						typeof payload.endLine !== "number"
+					) {
+						continue
+					}
+
+					documents.push({
+						id: String(i),
+						filePath: payload.filePath,
+						codeChunk: payload.codeChunk,
+						startLine: payload.startLine,
+						endLine: payload.endLine,
+						originalScore: result.score,
+					})
+				}
+
+				// If no valid documents remain, skip reranking and return original results
+				if (documents.length === 0) {
+					return results
+				}
+
+				// Call reranker
+				const reranked: RerankerResult[] = await reranker.rerank(query, documents)
+				if (!reranked || reranked.length === 0) {
+					return results
+				}
+
+				// Map reranker scores back to results
+				const idToScore = new Map<string, number>()
+				for (const item of reranked) {
+					if (typeof item.id === "string" && typeof item.score === "number") {
+						idToScore.set(item.id, item.score)
+					}
+				}
+
+				if (idToScore.size === 0) {
+					return results
+				}
+
+				const rerankMinScore = reranker.minScore
+				const rerankedResults: VectorStoreSearchResult[] = []
+				const filteredOutByRerank: VectorStoreSearchResult[] = []
+				const unratedResults: VectorStoreSearchResult[] = []
+
+				for (let i = 0; i < results.length; i++) {
+					const id = String(i)
+					const newScore = idToScore.get(id)
+					const result = results[i]
+
+					// If the reranker didn't return a score for this result, keep it as-is
+					// (it already passed the initial vector-store minScore filter).
+					if (newScore === undefined || !result.payload) {
+						if (result.payload) {
+							;(result.payload as any).rerank_filtered = false
+						}
+						unratedResults.push(result)
+						continue
+					}
+
+					const payload = result.payload as any
+					payload.originalScore ??= result.score
+					result.score = newScore
+
+					const passesThreshold = result.score >= rerankMinScore
+					payload.rerank_filtered = !passesThreshold
+
+					if (passesThreshold) {
+						rerankedResults.push(result)
+					} else {
+						filteredOutByRerank.push(result)
+					}
+				}
+
+				// Combine all results so callers can still see items filtered out by reranking.
+				// The rerank_filtered flag on the payload tells consumers which ones to hide from LLMs.
+				const combinedResults = [...rerankedResults, ...unratedResults, ...filteredOutByRerank]
+				combinedResults.sort((a, b) => b.score - a.score)
+				return combinedResults
+			} catch (err) {
+				// Any reranking error should be logged but must not affect outer search behavior
+				console.error("[CodeIndexSearchService] Reranking failed:", err)
+				return results
+			}
 		} catch (error) {
 			console.error("[CodeIndexSearchService] Error during search:", error)
 			this.stateManager.setSystemState("Error", `Search failed: ${(error as Error).message}`)

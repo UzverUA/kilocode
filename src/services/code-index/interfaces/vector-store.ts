@@ -92,6 +92,7 @@ export interface Payload {
 	filePath: string
 	codeChunk: string
 	startLine: number
+	rerank_filtered?: boolean
 	endLine: number
 	[key: string]: any
 }
