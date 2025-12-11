@@ -14,6 +14,15 @@ import ignore from "ignore"
 import path from "path"
 import { TelemetryService } from "@roo-code/telemetry"
 import { TelemetryEventName } from "@roo-code/types"
+import { ICodeIndexReranker } from "./interfaces/reranker"
+import { LocalLlamaReranker } from "./reranker/local-llama-reranker"
+import { DeepinfraReranker } from "./reranker/deepinfra-reranker"
+
+const ENABLE_RERANKER = true
+const RERANKER_BATCH_SIZE = 500
+const RERANKER_TIMEOUT_MS = 20000
+const USE_DEEPINFRA_RERANKER = true
+const RERANKER_MIN_SCORE = 0.5
 
 export class CodeIndexManager {
 	// --- Singleton Implementation ---
@@ -400,6 +409,16 @@ export class CodeIndexManager {
 				}
 			}
 		}
+
+		// Instantiate reranker when enabled and in local mode
+		let reranker: ICodeIndexReranker | null = null
+		if (!isKiloOrgMode && ENABLE_RERANKER) {
+			if (USE_DEEPINFRA_RERANKER) {
+				reranker = new DeepinfraReranker(RERANKER_BATCH_SIZE, RERANKER_TIMEOUT_MS, RERANKER_MIN_SCORE)
+			} else {
+				reranker = new LocalLlamaReranker(RERANKER_BATCH_SIZE, RERANKER_TIMEOUT_MS, RERANKER_MIN_SCORE)
+			}
+		}
 		// kilocode_change end
 
 		// (Re)Initialize orchestrator
@@ -420,6 +439,7 @@ export class CodeIndexManager {
 			this._stateManager,
 			embedder,
 			vectorStore,
+			reranker,
 		)
 		// kilocode_change end
 

@@ -1505,7 +1505,10 @@ export const ChatRowContent = ({
 								startLine: number
 								endLine: number
 								codeChunk: string
+								rerankFiltered?: boolean
 							}>
+							totalResults?: number
+							visibleResults?: number
 						}
 					} | null = null
 
@@ -1522,9 +1525,15 @@ export const ChatRowContent = ({
 						return <div>Error displaying search results.</div>
 					}
 
-					const { results = [] } = parsed?.content || {}
+					const { results = [], totalResults, visibleResults } = parsed?.content || {}
 
-					return <CodebaseSearchResultsDisplay results={results} />
+					return (
+						<CodebaseSearchResultsDisplay
+							results={results}
+							totalResults={totalResults}
+							visibleResults={visibleResults}
+						/>
+					)
 				case "user_edit_todos":
 					return <UpdateTodoListToolBlock userEdited onChange={() => {}} />
 				case "tool" as any:

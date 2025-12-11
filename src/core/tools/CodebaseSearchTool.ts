@@ -164,6 +164,8 @@ export class CodebaseSearchTool extends BaseTool<"codebase_search"> {
 			const jsonResult = {
 				query,
 				results: [],
+				totalResults: searchResults.length,
+				visibleResults: 0,
 			} as {
 				query: string
 				results: Array<{
@@ -172,7 +174,10 @@ export class CodebaseSearchTool extends BaseTool<"codebase_search"> {
 					startLine: number
 					endLine: number
 					codeChunk: string
+					rerankFiltered?: boolean
 				}>
+				totalResults: number
+				visibleResults: number
 			}
 
 			searchResults.forEach((result) => {
@@ -180,6 +185,7 @@ export class CodebaseSearchTool extends BaseTool<"codebase_search"> {
 				if (!("filePath" in result.payload)) return
 
 				const relativePath = vscode.workspace.asRelativePath(result.payload.filePath, false)
+				const rerankFiltered = !!(result.payload as any).rerank_filtered
 
 				jsonResult.results.push({
 					filePath: relativePath,
@@ -187,16 +193,29 @@ export class CodebaseSearchTool extends BaseTool<"codebase_search"> {
 					startLine: result.payload.startLine,
 					endLine: result.payload.endLine,
 					codeChunk: result.payload.codeChunk.trim(),
+					rerankFiltered,
 				})
+
+				if (!rerankFiltered) {
+					jsonResult.visibleResults += 1
+				}
 			})
 
 			const payload = { tool: "codebaseSearch", content: jsonResult }
 			await task.say("codebase_search_result", JSON.stringify(payload))
 
+			// Only non-filtered results should be provided to the LLM/tool output
+			const llmResults = jsonResult.results.filter((r) => !r.rerankFiltered)
+
+			if (llmResults.length === 0) {
+				pushToolResult(`No relevant code snippets found for the query: "${query}"`)
+				return
+			}
+
 			const output = `Query: ${query}
 Results:
 
-${jsonResult.results
+${llmResults
 	.map(
 		(result) => `File path: ${result.filePath}
 Score: ${result.score}

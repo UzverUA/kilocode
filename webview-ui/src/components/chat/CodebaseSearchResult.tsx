@@ -10,9 +10,16 @@ interface CodebaseSearchResultProps {
 	endLine: number
 	snippet: string
 	language: string
+	rerankFiltered?: boolean
 }
 
-const CodebaseSearchResult: React.FC<CodebaseSearchResultProps> = ({ filePath, score, startLine, endLine }) => {
+const CodebaseSearchResult: React.FC<CodebaseSearchResultProps> = ({
+	filePath,
+	score,
+	startLine,
+	endLine,
+	rerankFiltered,
+}) => {
 	const { t } = useTranslation("chat")
 
 	const handleClick = () => {
@@ -26,11 +33,16 @@ const CodebaseSearchResult: React.FC<CodebaseSearchResultProps> = ({ filePath, s
 		})
 	}
 
+	const containerClasses = [
+		"p-2 border border-[var(--vscode-editorGroup-border)] cursor-pointer hover:bg-secondary hover:text-white",
+		rerankFiltered ? "opacity-60" : "",
+	]
+		.filter(Boolean)
+		.join(" ")
+
 	return (
 		<StandardTooltip content={t("codebaseSearch.resultTooltip", { score: score.toFixed(3) })}>
-			<div
-				onClick={handleClick}
-				className="p-2 border border-[var(--vscode-editorGroup-border)] cursor-pointer hover:bg-secondary hover:text-white">
+			<div onClick={handleClick} className={containerClasses}>
 				<div className="flex gap-2 items-center overflow-hidden">
 					<span className="text-primary-300 whitespace-nowrap flex-shrink-0">
 						{filePath.split("/").at(-1)}:{startLine === endLine ? startLine : `${startLine}-${endLine}`}
