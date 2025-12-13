@@ -135,20 +135,20 @@ export async function presentAssistantMessage(cline: Task) {
 				break
 			}
 
-			if (cline.didAlreadyUseTool) {
-				const toolCallId = mcpBlock.id
-				const errorMessage = `MCP tool [${mcpBlock.name}] was not executed because a tool has already been used in this message. Only one tool may be used per message.`
+			// if (cline.didAlreadyUseTool) {
+			// 	const toolCallId = mcpBlock.id
+			// 	const errorMessage = `MCP tool [${mcpBlock.name}] was not executed because a tool has already been used in this message. Only one tool may be used per message.`
 
-				if (toolCallId) {
-					cline.userMessageContent.push({
-						type: "tool_result",
-						tool_use_id: toolCallId,
-						content: errorMessage,
-						is_error: true,
-					} as Anthropic.ToolResultBlockParam)
-				}
-				break
-			}
+			// 	if (toolCallId) {
+			// 		cline.userMessageContent.push({
+			// 			type: "tool_result",
+			// 			tool_use_id: toolCallId,
+			// 			content: errorMessage,
+			// 			is_error: true,
+			// 		} as Anthropic.ToolResultBlockParam)
+			// 	}
+			// 	break
+			// }
 
 			// Track if we've already pushed a tool result
 			let hasToolResult = false
@@ -474,30 +474,30 @@ export async function presentAssistantMessage(cline: Task) {
 				break
 			}
 
-			if (cline.didAlreadyUseTool) {
-				// Ignore any content after a tool has already been used.
-				// For native protocol, we must send a tool_result for every tool_use to avoid API errors
-				const toolCallId = block.id
-				const errorMessage = `Tool [${block.name}] was not executed because a tool has already been used in this message. Only one tool may be used per message. You must assess the first tool's result before proceeding to use the next tool.`
+			// if (cline.didAlreadyUseTool) {
+			// 	// Ignore any content after a tool has already been used.
+			// 	// For native protocol, we must send a tool_result for every tool_use to avoid API errors
+			// 	const toolCallId = block.id
+			// 	const errorMessage = `Tool [${block.name}] was not executed because a tool has already been used in this message. Only one tool may be used per message. You must assess the first tool's result before proceeding to use the next tool.`
 
-				if (toolCallId) {
-					// Native protocol: MUST send tool_result for every tool_use
-					cline.userMessageContent.push({
-						type: "tool_result",
-						tool_use_id: toolCallId,
-						content: errorMessage,
-						is_error: true,
-					} as Anthropic.ToolResultBlockParam)
-				} else {
-					// XML protocol: send as text
-					cline.userMessageContent.push({
-						type: "text",
-						text: errorMessage,
-					})
-				}
+			// 	if (toolCallId) {
+			// 		// Native protocol: MUST send tool_result for every tool_use
+			// 		cline.userMessageContent.push({
+			// 			type: "tool_result",
+			// 			tool_use_id: toolCallId,
+			// 			content: errorMessage,
+			// 			is_error: true,
+			// 		} as Anthropic.ToolResultBlockParam)
+			// 	} else {
+			// 		// XML protocol: send as text
+			// 		cline.userMessageContent.push({
+			// 			type: "text",
+			// 			text: errorMessage,
+			// 		})
+			// 	}
 
-				break
-			}
+			// 	break
+			// }
 
 			// Track if we've already pushed a tool result for this tool call (native protocol only)
 			let hasToolResult = false
