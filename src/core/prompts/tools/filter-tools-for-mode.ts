@@ -22,8 +22,8 @@ const ALWAYS_REMOVED_TOOLS = new Set([
 	"browser_action",
 	"execute_command",
 	"run_slash_command",
-	"list_files",
-	"list_code_definition_names",
+	// "list_files",
+	// "list_code_definition_names",
 	"fetch_instructions",
 ])
 
@@ -200,7 +200,7 @@ export function filterNativeToolsForMode(
 	if (!mcpHub || !hasAnyMcpResources(mcpHub)) {
 		allowedToolNames.delete("access_mcp_resource")
 	}
-	
+
 	if (modeSlug === "researcher") {
 		allowedToolNames.delete("agentic_search")
 		allowedToolNames.delete("ask_followup_question")
