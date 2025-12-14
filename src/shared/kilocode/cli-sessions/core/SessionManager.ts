@@ -1177,45 +1177,8 @@ export class SessionManager {
 	}
 
 	async generateTitle(uiMessages: ClineMessage[]) {
-		const rawText = this.getFirstMessageText(uiMessages)
-
-		if (!rawText) {
-			return null
-		}
-
-		try {
-			const prompt = `Summarize the following user request in 140 characters or less. Be concise and capture the main intent. Do not use quotes or add any prefix like "Summary:" - just provide the summary text directly. Strip out any sensitive information. Your result will be used as the conversation title.
-
-User request:
-${rawText}
-
-Summary:`
-
-			if (!this.extensionMessenger) {
-				throw new Error("SessionManager used before initialization")
-			}
-
-			const summary = await this.extensionMessenger.requestSingleCompletion(prompt, 30000)
-
-			let cleanedSummary = summary.trim()
-
-			cleanedSummary = cleanedSummary.replace(/^["']|["']$/g, "")
-
-			if (cleanedSummary) {
-				return cleanedSummary
-			}
-
-			throw new Error("Empty summary generated")
-		} catch (error) {
-			this.logger?.warn("Failed to generate title using LLM, falling back to truncation", "SessionManager", {
-				error: error instanceof Error ? error.message : String(error),
-			})
-
-			if (rawText.length > 140) {
-				return rawText.substring(0, 137) + "..."
-			}
-
-			return rawText
-		}
+		// UZ: maybe temp, maybe permanent?
+		const rawText = this.getFirstMessageText(uiMessages, true)
+		return rawText
 	}
 }
