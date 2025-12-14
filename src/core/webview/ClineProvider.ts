@@ -1846,7 +1846,9 @@ ${prompt}
 				) //kilocode_change show extra debugging information to debug task not found issues
 			}
 		} else {
+			/* UZ: TEMPORARY. Untill someone else will fix it https://github.com/Kilo-Org/kilocode/issues/4443
 			vscode.window.showErrorMessage(`Task with ID: ${id} not found in history.`) // kilocode_change show extra debugging information to debug task not found issues
+			*/
 		}
 
 		// if we tried to get a task that doesn't exist, remove it from state
