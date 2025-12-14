@@ -28,9 +28,7 @@ const StyledMarkdown = styled.div`
 		font-family: var(--vscode-editor-font-family, monospace);
 		font-size: 0.85em;
 		filter: saturation(110%) brightness(95%);
-		color: var(--vscode-textPreformat-foreground) !important;
 		background-color: var(--vscode-textPreformat-background) !important;
-		padding: 1px 2px;
 		white-space: pre-line;
 		word-break: break-word;
 		overflow-wrap: anywhere;
@@ -70,6 +68,7 @@ const StyledMarkdown = styled.div`
 	}
 
 	font-family:
+		"Open Sans",
 		var(--vscode-font-family),
 		system-ui,
 		-apple-system,
@@ -83,17 +82,17 @@ const StyledMarkdown = styled.div`
 		"Helvetica Neue",
 		sans-serif;
 
-	font-size: var(--vscode-font-size, 13px);
+	font-size: var(--markdown-font-size, calc(var(--vscode-font-size, 13px) * 1.1));
 
 	p,
 	li,
 	ol,
 	ul {
-		line-height: 1.35em;
+		line-height: 1.15em;
 	}
 
 	li {
-		margin: 0.5em 0;
+		margin: 0.3em 0;
 	}
 
 	ol,
@@ -120,7 +119,7 @@ const StyledMarkdown = styled.div`
 
 	p {
 		white-space: pre-wrap;
-		margin: 1em 0 0.25em;
+		margin: 0.5em 0 0.25em;
 	}
 
 	/* Prevent layout shifts during streaming */
@@ -149,18 +148,25 @@ const StyledMarkdown = styled.div`
 	h1 {
 		font-size: 1.65em;
 		font-weight: 700;
-		margin: 1.35em 0 0.5em;
+		margin: 1em 0 0.5em;
 	}
 
 	h2 {
 		font-size: 1.35em;
 		font-weight: 500;
-		margin: 1.35em 0 0.5em;
+		margin: 1em 0 0.5em;
 	}
 
 	h3 {
 		font-size: 1.2em;
 		font-weight: 500;
+		margin: 1em 0 0.5em;
+	}
+
+	h4 {
+		font-size: 1.1em;
+		font-weight: 500;
+		margin: 1em 0 0.5em;
 	}
 
 	/* Table styles for remark-gfm */

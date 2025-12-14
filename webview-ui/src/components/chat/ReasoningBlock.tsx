@@ -68,7 +68,8 @@ export const ReasoningBlock = ({ content, isStreaming, isLast }: ReasoningBlockP
 			{(content?.trim()?.length ?? 0) > 0 && !isCollapsed && (
 				<div
 					ref={contentRef}
-					className="border-l border-vscode-descriptionForeground/20 ml-2 pl-4 pb-1 text-vscode-descriptionForeground">
+					className="border-l border-vscode-descriptionForeground/20 ml-2 pl-4 pb-1 text-vscode-descriptionForeground"
+					style={{ ["--markdown-font-size" as any]: "0.65rem" } as any}>
 					<MarkdownBlock markdown={content} />
 				</div>
 			)}
