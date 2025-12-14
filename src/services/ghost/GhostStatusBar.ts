@@ -1,6 +1,7 @@
 import * as vscode from "vscode"
 import { t } from "../../i18n"
 import type { GhostStatusBarStateProps } from "./types"
+import { Package } from "../../shared/package" // <-- add this
 
 export class GhostStatusBar {
 	statusBar: vscode.StatusBarItem
@@ -59,7 +60,7 @@ export class GhostStatusBar {
 		const sessionStartTime = this.formatTime(this.props.sessionStartTime)
 		const now = this.formatTime(Date.now())
 
-		this.statusBar.text = `${t("kilocode:ghost.statusBar.enabled")} (${this.props.completionCount})`
+		this.statusBar.text = `${t("kilocode:ghost.statusBar.enabled")} ${Package.version} ∣ (${this.props.completionCount})`
 
 		this.statusBar.tooltip = [
 			t("kilocode:ghost.statusBar.tooltip.completionSummary", {
