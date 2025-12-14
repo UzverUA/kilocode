@@ -101,47 +101,48 @@ export class SessionTitleService {
 	 * @returns The generated title, or null if no text is available
 	 */
 	async generateTitle(uiMessages: ClineMessage[]): Promise<string | null> {
-		const rawText = this.getFirstMessageText(uiMessages)
+		// UZ: maybe temp, maybe permanent?
+		const rawText = this.getFirstMessageText(uiMessages, true)
+		return rawText
+// 		if (!rawText) {
+// 			return null
+// 		}
 
-		if (!rawText) {
-			return null
-		}
+// 		try {
+// 			const prompt = `Summarize the following user request in 140 characters or less. Be concise and capture the main intent. Do not use quotes or add any prefix like "Summary:" - just provide the summary text directly. Strip out any sensitive information. Your result will be used as the conversation title.
 
-		try {
-			const prompt = `Summarize the following user request in 140 characters or less. Be concise and capture the main intent. Do not use quotes or add any prefix like "Summary:" - just provide the summary text directly. Strip out any sensitive information. Your result will be used as the conversation title.
+// User request:
+// ${rawText}
 
-User request:
-${rawText}
+// Summary:`
 
-Summary:`
+// 			const summary = await this.extensionMessenger.requestSingleCompletion(prompt, this.llmTimeoutMs)
 
-			const summary = await this.extensionMessenger.requestSingleCompletion(prompt, this.llmTimeoutMs)
+// 			let cleanedSummary = summary.trim()
 
-			let cleanedSummary = summary.trim()
+// 			// Remove surrounding quotes if present
+// 			cleanedSummary = cleanedSummary.replace(/^["']|["']$/g, "")
 
-			// Remove surrounding quotes if present
-			cleanedSummary = cleanedSummary.replace(/^["']|["']$/g, "")
+// 			if (cleanedSummary) {
+// 				return cleanedSummary
+// 			}
 
-			if (cleanedSummary) {
-				return cleanedSummary
-			}
+// 			throw new Error("Empty summary generated")
+// 		} catch (error) {
+// 			this.logger.warn(
+// 				"Failed to generate title using LLM, falling back to truncation",
+// 				LOG_SOURCES.SESSION_TITLE,
+// 				{
+// 					error: error instanceof Error ? error.message : String(error),
+// 				},
+// 			)
 
-			throw new Error("Empty summary generated")
-		} catch (error) {
-			this.logger.warn(
-				"Failed to generate title using LLM, falling back to truncation",
-				LOG_SOURCES.SESSION_TITLE,
-				{
-					error: error instanceof Error ? error.message : String(error),
-				},
-			)
+// 			if (rawText.length > this.maxTitleLength) {
+// 				return rawText.substring(0, this.truncatedTitleLength) + "..."
+// 			}
 
-			if (rawText.length > this.maxTitleLength) {
-				return rawText.substring(0, this.truncatedTitleLength) + "..."
-			}
-
-			return rawText
-		}
+// 			return rawText
+// 		}
 	}
 
 	/**
