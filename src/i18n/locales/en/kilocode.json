@@ -98,7 +98,7 @@
 	},
 	"ghost": {
 		"statusBar": {
-			"enabled": "$(kilo-logo) Autocomplete",
+			"enabled": "$(kilo-logo)",
 			"snoozed": "snoozed",
 			"warning": "$(warning) Autocomplete",
 			"tooltip": {
