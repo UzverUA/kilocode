@@ -236,18 +236,18 @@ export class FFmpegCaptureService extends EventEmitter {
 		const platform = os.platform()
 		try {
 			execSync("ffmpeg -version", { stdio: "ignore" })
-			console.log(`🎙️ [FFmpeg] ✅ Found 'ffmpeg' in PATH`)
+			// console.log(`🎙️ [FFmpeg] ✅ Found 'ffmpeg' in PATH`)
 			cachedFFmpegPath = "ffmpeg"
 			return { available: true, path: "ffmpeg" }
 		} catch {
-			console.log(`🎙️ [FFmpeg] ❌ 'ffmpeg' not in PATH, trying fallback paths...`)
+			// console.log(`🎙️ [FFmpeg] ❌ 'ffmpeg' not in PATH, trying fallback paths...`)
 		}
 
 		const platformPaths = fallbackPaths[platform] || []
 		for (const fallbackPath of platformPaths) {
 			try {
 				execSync(`"${fallbackPath}" -version`, { stdio: "ignore" })
-				console.log(`🎙️ [FFmpeg] ✅ Found at: ${fallbackPath}`)
+				// console.log(`🎙️ [FFmpeg] ✅ Found at: ${fallbackPath}`)
 				cachedFFmpegPath = fallbackPath
 				return { available: true, path: fallbackPath }
 			} catch {

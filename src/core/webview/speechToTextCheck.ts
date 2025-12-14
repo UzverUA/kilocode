@@ -34,7 +34,7 @@ export async function checkSpeechToTextAvailable(
 			return cachedResult.available
 		}
 	}
-
+	return false // UZ: temp change untill spamming logs is fixed
 	console.log("🎙️ [STT Availability Check] Starting speech-to-text prerequisite check...")
 
 	try {
