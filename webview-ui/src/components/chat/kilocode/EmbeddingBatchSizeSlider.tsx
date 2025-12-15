@@ -29,7 +29,7 @@ export const EmbeddingBatchSizeSlider: React.FC<EmbeddingBatchSizeSliderProps> =
 			<div className="flex items-center gap-2">
 				<Slider
 					min={CODEBASE_INDEX_DEFAULTS.MIN_EMBEDDING_BATCH_SIZE}
-					max={CODEBASE_INDEX_DEFAULTS.MAX_EMBEDDING_BATCH_SIZE}
+					max={500}
 					step={CODEBASE_INDEX_DEFAULTS.EMBEDDING_BATCH_SIZE_STEP}
 					value={[currentValue]}
 					onValueChange={(values) => onChange(values[0])}
