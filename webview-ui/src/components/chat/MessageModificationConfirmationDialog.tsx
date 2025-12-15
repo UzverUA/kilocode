@@ -42,6 +42,7 @@ export const MessageModificationConfirmationDialog: React.FC<MessageModification
 						{t("common:answers.cancel")}
 					</AlertDialogCancel>
 					<AlertDialogAction
+						autoFocus
 						onClick={onConfirm}
 						className="bg-vscode-button-background hover:bg-vscode-button-hoverBackground text-vscode-button-foreground border-vscode-button-border">
 						{t("common:confirmation.proceed")}
