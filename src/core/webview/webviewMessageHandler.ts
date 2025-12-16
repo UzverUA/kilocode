@@ -3481,6 +3481,12 @@ export const webviewMessageHandler = async (
 				await provider.toggleTaskFavorite(message.text)
 			}
 			break
+		// kilocode_change start - add toggleTaskCompleted
+		case "toggleTaskCompleted":
+			if (message.text) {
+				await provider.toggleTaskCompleted(message.text)
+			}
+			break
 		// kilocode_change start - add fixMermaidSyntax
 		case "fixMermaidSyntax":
 			if (message.text && message.requestId) {

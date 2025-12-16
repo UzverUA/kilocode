@@ -3863,6 +3863,19 @@ Here is the project's README to help you get started:\n\n${mcpDetails.readmeCont
 		await this.postStateToWebview()
 	}
 
+	async toggleTaskCompleted(id: string) {
+		const history = this.getGlobalState("taskHistory") ?? []
+		const updatedHistory = history.map((item) => {
+			if (item.id === id) {
+				return { ...item, isCompleted: !item.isCompleted }
+			}
+			return item
+		})
+		await this.updateGlobalState("taskHistory", updatedHistory)
+		this.kiloCodeTaskHistoryVersion++
+		await this.postStateToWebview()
+	}
+
 	async getFavoriteTasks(): Promise<HistoryItem[]> {
 		const history = this.getGlobalState("taskHistory") ?? []
 		return history.filter((item) => item.isFavorited)

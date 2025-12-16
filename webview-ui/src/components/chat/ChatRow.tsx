@@ -193,8 +193,19 @@ export const ChatRowContent = ({
 	const { t, i18n } = useTranslation()
 
 	// kilocode_change: add showTimestamps
-	const { mcpServers, alwaysAllowMcp, currentCheckpoint, mode, apiConfiguration, clineMessages, showTimestamps } =
-		useExtensionState()
+	const {
+		mcpServers,
+		alwaysAllowMcp,
+		currentCheckpoint,
+		mode,
+		apiConfiguration,
+		clineMessages,
+		showTimestamps,
+		currentTaskItem,
+	} = useExtensionState()
+
+	// kilocode_change: manual completion toggle (mirrors history CompletedButton)
+	const isTaskMarkedCompleted = currentTaskItem?.isCompleted ?? false
 	const { info: model } = useSelectedModel(apiConfiguration)
 	const [isEditing, setIsEditing] = useState(false)
 	const [editedContent, setEditedContent] = useState("")
@@ -359,9 +370,27 @@ export const ChatRowContent = ({
 				]
 			case "completion_result":
 				return [
-					<span
-						className="codicon codicon-check"
-						style={{ color: successColor, marginBottom: "-1.5px" }}></span>,
+					<StandardTooltip content={isTaskMarkedCompleted ? "Mark as incomplete" : "Mark as completed"}>
+						<button
+							type="button"
+							disabled={!currentTaskItem?.id}
+							className="cursor-pointer bg-transparent border-0 p-0 m-0"
+							onClick={(e) => {
+								e.stopPropagation()
+								if (currentTaskItem?.id) {
+									vscode.postMessage({ type: "toggleTaskCompleted", text: currentTaskItem.id })
+								}
+							}}>
+							<span
+								className={`codicon ${isTaskMarkedCompleted ? "codicon-check-all" : "codicon-check"}`}
+								style={{
+									color: successColor,
+									marginBottom: "-1.5px",
+									opacity: currentTaskItem?.id ? 1 : 0.5,
+								}}
+							/>
+						</button>
+					</StandardTooltip>,
 					<span style={{ color: successColor, fontWeight: "bold" }}>{t("chat:taskCompleted")}</span>,
 				]
 			case "api_req_retry_delayed":
@@ -443,6 +472,8 @@ export const ChatRowContent = ({
 		inferenceProvider, // kilocode_change
 		tokensIn,
 		cacheReads,
+		currentTaskItem?.id,
+		isTaskMarkedCompleted,
 	])
 
 	const headerStyle: React.CSSProperties = {
@@ -1493,9 +1524,19 @@ export const ChatRowContent = ({
 				// kilocode_change end
 				case "completion_result":
 					const commitRange = message.metadata?.kiloCode?.commitRange
+					const completionHeaderStyle = isTaskMarkedCompleted
+						? {
+								...headerStyle,
+								width: "100%",
+								padding: "2px 6px",
+								borderRadius: 4,
+								backgroundImage:
+									"linear-gradient(90deg, rgba(34,197,94,0.14) 0%, rgba(34,197,94,0) 42%, rgba(34,197,94,0) 58%, rgba(34,197,94,0.14) 100%)",
+							}
+						: { ...headerStyle, width: "100%" }
 					return (
 						<>
-							<div style={headerStyle}>
+							<div style={completionHeaderStyle}>
 								{icon}
 								{/* kilocode_change start */}
 								<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -1802,9 +1843,19 @@ export const ChatRowContent = ({
 					)
 				case "completion_result":
 					if (message.text) {
+						const completionHeaderStyle = isTaskMarkedCompleted
+							? {
+									...headerStyle,
+									width: "100%",
+									padding: "2px 6px",
+									borderRadius: 4,
+									backgroundImage:
+										"linear-gradient(90deg, rgba(34,197,94,0.14) 0%, rgba(34,197,94,0) 42%, rgba(34,197,94,0) 58%, rgba(34,197,94,0.14) 100%)",
+								}
+							: { ...headerStyle, width: "100%" }
 						return (
 							<div>
-								<div style={headerStyle}>
+								<div style={completionHeaderStyle}>
 									{icon}
 									{title}
 								</div>

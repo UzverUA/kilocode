@@ -62,6 +62,7 @@ const KiloTaskHeader = ({
 	const { t } = useTranslation()
 	const { showTaskTimeline } = useExtensionState()
 	const { apiConfiguration, currentTaskItem, customModes } = useExtensionState()
+	const isCompleted = currentTaskItem?.isCompleted ?? false
 	const { id: modelId, info: model } = useSelectedModel(apiConfiguration)
 	const [isTaskExpanded, setIsTaskExpanded] = useState(false)
 
@@ -93,7 +94,15 @@ const KiloTaskHeader = ({
 					isTaskExpanded
 						? "border-vscode-panel-border text-vscode-foreground"
 						: "border-vscode-panel-border/80 text-vscode-foreground/80",
-				)}>
+				)}
+				style={
+					isCompleted
+						? {
+								backgroundImage:
+									"linear-gradient(90deg, rgba(34,197,94,0.10) 0%, rgba(34,197,94,0) 42%, rgba(34,197,94,0) 58%, rgba(34,197,94,0.10) 100%)",
+							}
+						: undefined
+				}>
 				<div className="flex justify-between items-center gap-2">
 					<div
 						className="flex items-center cursor-pointer -ml-0.5 select-none grow min-w-0"

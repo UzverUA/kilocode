@@ -214,6 +214,7 @@ export interface WebviewMessage {
 		| "showTimestamps" // kilocode_change
 		| "hideCostBelowThreshold" // kilocode_change
 		| "toggleTaskFavorite" // kilocode_change
+		| "toggleTaskCompleted" // kilocode_change
 		| "fixMermaidSyntax" // kilocode_change
 		| "mermaidFixResponse" // kilocode_change
 		| "openGlobalKeybindings" // kilocode_change

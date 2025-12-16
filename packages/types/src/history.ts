@@ -19,6 +19,7 @@ export const historyItemSchema = z.object({
 	size: z.number().optional(),
 	workspace: z.string().optional(),
 	isFavorited: z.boolean().optional(), // kilocode_change
+	isCompleted: z.boolean().optional(), // kilocode_change
 	fileNotfound: z.boolean().optional(), // kilocode_change
 	mode: z.string().optional(),
 	status: z.enum(["active", "completed", "delegated"]).optional(),
