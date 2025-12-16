@@ -543,6 +543,7 @@ export type ExtensionState = Pick<
 
 export interface ClineSayTool {
 	tool:
+		| "agenticSearch"
 		| "editedExistingFile"
 		| "appliedDiff"
 		| "newFileCreated"

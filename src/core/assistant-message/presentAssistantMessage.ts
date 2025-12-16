@@ -29,6 +29,7 @@ import { askFollowupQuestionTool } from "../tools/AskFollowupQuestionTool"
 import { switchModeTool } from "../tools/SwitchModeTool"
 import { attemptCompletionTool, AttemptCompletionCallbacks } from "../tools/AttemptCompletionTool"
 import { newTaskTool } from "../tools/NewTaskTool"
+import { agenticSearchTool } from "../tools/AgenticSearchTool"
 
 import { updateTodoListTool } from "../tools/UpdateTodoListTool"
 import { runSlashCommandTool } from "../tools/RunSlashCommandTool"
@@ -1029,6 +1030,15 @@ export async function presentAssistantMessage(cline: Task) {
 						removeClosingTag,
 						toolProtocol,
 						toolCallId: block.id,
+					})
+					break
+				case "agentic_search":
+					await agenticSearchTool.handle(cline, block as ToolUse<"agentic_search">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						removeClosingTag,
+						toolProtocol,
 					})
 					break
 				case "attempt_completion": {

@@ -162,7 +162,8 @@ export async function checkAutoApproval({
 			return state.alwaysAllowModeSwitch === true ? { decision: "approve" } : { decision: "ask" }
 		}
 
-		if (["newTask", "finishTask"].includes(tool?.tool)) {
+		// Treat agentic search tool uses as subtasks as well so they can be auto-approved
+		if (["newTask", "finishTask", "agenticSearch", "agentic_search"].includes(tool?.tool)) {
 			return state.alwaysAllowSubtasks === true ? { decision: "approve" } : { decision: "ask" }
 		}
 

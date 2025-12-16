@@ -3989,7 +3989,7 @@ Here is the project's README to help you get started:\n\n${mcpDetails.readmeCont
 			const msg = parentApiMessages[i]
 			if (msg.role === "assistant" && Array.isArray(msg.content)) {
 				for (const block of msg.content) {
-					if (block.type === "tool_use" && block.name === "new_task") {
+					if (block.type === "tool_use" && (block.name === "new_task" || block.name === "agentic_search")) {
 						toolUseId = block.id
 						break
 					}

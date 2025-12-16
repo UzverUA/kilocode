@@ -12,6 +12,7 @@ import generateImage from "./generate_image"
 import listCodeDefinitionNames from "./list_code_definition_names"
 import listFiles from "./list_files"
 import newTask from "./new_task"
+import agentic_search from "./agentic_search"
 import { createReadFileTool } from "./read_file"
 import runSlashCommand from "./run_slash_command"
 import searchAndReplace from "./search_and_replace"
@@ -34,6 +35,7 @@ export { convertOpenAIToolToAnthropic, convertOpenAIToolsToAnthropic } from "./c
  */
 export function getNativeTools(partialReadsEnabled: boolean = true): OpenAI.Chat.ChatCompletionTool[] {
 	return [
+		agentic_search,
 		// kilocode_change start
 		deleteFile,
 		editFile,
