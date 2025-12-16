@@ -2,6 +2,12 @@ import { Task } from "../task/Task"
 import { ClineMessage } from "@roo-code/types"
 import { ApiMessage } from "../task-persistence/apiMessages"
 import { cleanupAfterTruncation } from "../condense"
+import * as fs from "fs/promises"
+import * as os from "os"
+import * as path from "path"
+
+// Toggle this to enable/disable Desktop logs for the anchored-range deletion ("X" button)
+const EXPORT_API_HISTORY_ON_ANCHOR_DELETE = true
 
 export interface RewindOptions {
 	/** Whether to include the target message in deletion (edit=true, delete=false) */
@@ -36,6 +42,46 @@ export class MessageManager {
 
 	private isAnchorMessage(msg: ClineMessage | undefined): boolean {
 		return !!msg && msg.type === "say" && (msg.say === "api_req_started" || msg.say === "user_feedback")
+	}
+
+	private async exportApiHistorySnapshotToDesktopLogs(params: {
+		when: "pre" | "post"
+		runId: number
+		anchorTs: number
+		anchorKind: "api_req_started" | "user_feedback"
+		history: ApiMessage[]
+	}): Promise<void> {
+		try {
+			const logsDir = path.join(os.homedir(), "Desktop", "logs")
+			await fs.mkdir(logsDir, { recursive: true })
+
+			const sanitizedHistory = params.history.map((msg) => {
+				if (msg?.role === "assistant") {
+					const cloned: any = { ...(msg as any) }
+					delete cloned.reasoning_details
+					return cloned
+				}
+				return msg
+			})
+
+			const payload = {
+				meta: {
+					operation: "deleteAnchorRange",
+					when: params.when,
+					runId: params.runId,
+					anchorTs: params.anchorTs,
+					anchorKind: params.anchorKind,
+					exportedAt: Date.now(),
+				},
+				apiHistory: sanitizedHistory,
+			}
+
+			const fileName = `apiHistory-${params.when}-deleteAnchorRange-${params.anchorKind}-${params.anchorTs}-${params.runId}.json`
+			const filePath = path.join(logsDir, fileName)
+			await fs.writeFile(filePath, JSON.stringify(payload, null, 2), "utf8")
+		} catch (error) {
+			console.error("[MessageManager] Failed to export apiHistory snapshot:", error)
+		}
 	}
 
 	private collectRemovedContextEventIdsInRange(fromIndex: number, toIndex: number): ContextEventIds {
@@ -80,6 +126,8 @@ export class MessageManager {
 	 * This is intentionally NOT a rewind/truncate-from-point operation.
 	 */
 	async deleteAnchorRange(anchorTs: number, anchorKind: "api_req_started" | "user_feedback"): Promise<boolean> {
+		const exportRunId = Date.now()
+
 		const startIndex = this.task.clineMessages.findIndex((m) => m.ts === anchorTs)
 		if (startIndex === -1) {
 			console.warn(`[MessageManager] deleteAnchorRange: anchorTs not found in clineMessages: ${anchorTs}`)
@@ -113,6 +161,17 @@ export class MessageManager {
 
 		// Step 3: Delete one mapped API history message (role-based, ts > anchorTs)
 		const originalHistory = this.task.apiConversationHistory
+
+		if (EXPORT_API_HISTORY_ON_ANCHOR_DELETE) {
+			await this.exportApiHistorySnapshotToDesktopLogs({
+				when: "pre",
+				runId: exportRunId,
+				anchorTs,
+				anchorKind,
+				history: originalHistory,
+			})
+		}
+
 		let apiHistory = [...originalHistory]
 		const targetRole = anchorKind === "user_feedback" ? "user" : "assistant"
 		const apiIndex = apiHistory.findIndex(
@@ -147,6 +206,16 @@ export class MessageManager {
 
 		// Step 5: Cleanup orphaned tags (condenseParent / truncationParent)
 		apiHistory = cleanupAfterTruncation(apiHistory)
+
+		if (EXPORT_API_HISTORY_ON_ANCHOR_DELETE) {
+			await this.exportApiHistorySnapshotToDesktopLogs({
+				when: "post",
+				runId: exportRunId,
+				anchorTs,
+				anchorKind,
+				history: apiHistory,
+			})
+		}
 
 		const historyChanged =
 			apiHistory.length !== originalHistory.length || apiHistory.some((msg, i) => msg !== originalHistory[i])
