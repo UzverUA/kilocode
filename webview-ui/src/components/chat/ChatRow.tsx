@@ -61,6 +61,7 @@ import {
 	FolderTree,
 	TerminalSquare,
 	MessageCircle,
+	X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SeeNewChangesButtons } from "./kilocode/SeeNewChangesButtons"
@@ -247,6 +248,17 @@ export const ChatRowContent = ({
 			images: editImages,
 		})
 	}, [message.ts, editedContent, editImages])
+
+	const handleDeleteAnchorRange = useCallback(
+		(anchorKind: "api_req_started" | "user_feedback") => {
+			vscode.postMessage({
+				type: "deleteAnchorRange",
+				anchorTs: message.ts,
+				anchorKind,
+			})
+		},
+		[message.ts],
+	)
 
 	// Handle image selection for editing
 	const handleSelectImages = useCallback(() => {
@@ -1237,24 +1249,34 @@ export const ChatRowContent = ({
 									</div>
 									{/* kilocode_change end */}
 								</div>
-								<div
-									className="text-xs  text-vscode-dropdown-foreground border-vscode-dropdown-border/50 border px-1.5 py-0.5 rounded-lg"
-									style={{ opacity: shouldShowCost ? 1 : 0 }}>
-									{formatLargeNumber(tokensIn || 0)} &nbsp;&nbsp;∣&nbsp;&nbsp; $
-									{Number(cost || 0)?.toFixed(4)}
+								<div className="flex items-center gap-2">
+									<div
+										className="text-xs text-vscode-dropdown-foreground border-vscode-dropdown-border/50 border px-1.5 py-0.5 rounded-lg"
+										style={{ opacity: shouldShowCost ? 1 : 0 }}>
+										{formatLargeNumber(tokensIn || 0)} &nbsp;&nbsp;∣&nbsp;&nbsp; $
+										{Number(cost || 0)?.toFixed(4)}
+									</div>
+									{
+										// kilocode_change start
+										!cost && usageMissing && (
+											<StandardTooltip content={t("kilocode:pricing.costUnknownDescription")}>
+												<div className="flex items-center text-xs text-vscode-dropdown-foreground border-vscode-dropdown-border/50 border px-1.5 py-0.5 rounded-lg whitespace-nowrap">
+													<span className="codicon codicon-warning pr-1"></span>
+													{t("kilocode:pricing.costUnknown")}
+												</div>
+											</StandardTooltip>
+										)
+										// kilocode_change end
+									}
+									<div
+										className="cursor-pointer shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+										onClick={(e) => {
+											e.stopPropagation()
+											handleDeleteAnchorRange("api_req_started")
+										}}>
+										<X className="w-4 shrink-0" aria-label="Delete anchored segment icon" />
+									</div>
 								</div>
-								{
-									// kilocode_change start
-									!cost && usageMissing && (
-										<StandardTooltip content={t("kilocode:pricing.costUnknownDescription")}>
-											<div className="flex items-center text-xs text-vscode-dropdown-foreground border-vscode-dropdown-border/50 border px-1.5 py-0.5 rounded-lg whitespace-nowrap">
-												<span className="codicon codicon-warning pr-1"></span>
-												{t("kilocode:pricing.costUnknown")}
-											</div>
-										</StandardTooltip>
-									)
-									// kilocode_change end
-								}
 							</div>
 							{(((cost === null || cost === undefined) && apiRequestFailedMessage) ||
 								apiReqStreamingFailedMessage) && (
@@ -1388,6 +1410,14 @@ export const ChatRowContent = ({
 													handleEditClick()
 												}}>
 												<Edit className="w-4 shrink-0" aria-label="Edit message icon" />
+											</div>
+											<div
+												className="cursor-pointer shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+												onClick={(e) => {
+													e.stopPropagation()
+													handleDeleteAnchorRange("user_feedback")
+												}}>
+												<X className="w-4 shrink-0" aria-label="Delete anchored segment icon" />
 											</div>
 											<div
 												className="cursor-pointer shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"

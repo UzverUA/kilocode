@@ -34,6 +34,129 @@ interface ContextEventIds {
 export class MessageManager {
 	constructor(private task: Task) {}
 
+	private isAnchorMessage(msg: ClineMessage | undefined): boolean {
+		return !!msg && msg.type === "say" && (msg.say === "api_req_started" || msg.say === "user_feedback")
+	}
+
+	private collectRemovedContextEventIdsInRange(fromIndex: number, toIndex: number): ContextEventIds {
+		const condenseIds = new Set<string>()
+		const truncationIds = new Set<string>()
+
+		const start = Math.max(0, fromIndex)
+		const end = Math.min(this.task.clineMessages.length, toIndex)
+		for (let i = start; i < end; i++) {
+			const msg = this.task.clineMessages[i]
+
+			// Collect condenseIds from condense_context events
+			if (msg.say === "condense_context" && msg.contextCondense?.condenseId) {
+				condenseIds.add(msg.contextCondense.condenseId)
+				console.log(
+					`[MessageManager] Found condense_context to remove (range): ${msg.contextCondense.condenseId}`,
+				)
+			}
+
+			// Collect truncationIds from sliding_window_truncation events
+			if (msg.say === "sliding_window_truncation" && msg.contextTruncation?.truncationId) {
+				truncationIds.add(msg.contextTruncation.truncationId)
+				console.log(
+					`[MessageManager] Found sliding_window_truncation to remove (range): ${msg.contextTruncation.truncationId}`,
+				)
+			}
+		}
+
+		return { condenseIds, truncationIds }
+	}
+
+	/**
+	 * Delete an anchored UI range and its corresponding single API history message.
+	 *
+	 * UI deletion rule: delete clineMessages in [anchorTs, nextAnchorTs)
+	 * where nextAnchorTs is the next message whose say is api_req_started or user_feedback.
+	 *
+	 * API deletion rule:
+	 * - user_feedback: remove first apiConversationHistory message with role=user and ts > anchorTs
+	 * - api_req_started: remove first apiConversationHistory message with role=assistant and ts > anchorTs
+	 *
+	 * This is intentionally NOT a rewind/truncate-from-point operation.
+	 */
+	async deleteAnchorRange(anchorTs: number, anchorKind: "api_req_started" | "user_feedback"): Promise<boolean> {
+		const startIndex = this.task.clineMessages.findIndex((m) => m.ts === anchorTs)
+		if (startIndex === -1) {
+			console.warn(`[MessageManager] deleteAnchorRange: anchorTs not found in clineMessages: ${anchorTs}`)
+			return false
+		}
+
+		const startMsg = this.task.clineMessages[startIndex]
+		if (!this.isAnchorMessage(startMsg) || startMsg.say !== anchorKind) {
+			console.warn(
+				`[MessageManager] deleteAnchorRange: anchorTs ${anchorTs} is not an anchor of kind ${anchorKind}`,
+			)
+			return false
+		}
+
+		let endIndex = this.task.clineMessages.length
+		for (let i = startIndex + 1; i < this.task.clineMessages.length; i++) {
+			if (this.isAnchorMessage(this.task.clineMessages[i])) {
+				endIndex = i
+				break
+			}
+		}
+
+		// Step 1: Collect context event IDs from messages being removed
+		const removedIds = this.collectRemovedContextEventIdsInRange(startIndex, endIndex)
+
+		// Step 2: Delete the UI range without truncating the tail
+		const newClineMessages = this.task.clineMessages
+			.slice(0, startIndex)
+			.concat(this.task.clineMessages.slice(endIndex))
+		await this.task.overwriteClineMessages(newClineMessages)
+
+		// Step 3: Delete one mapped API history message (role-based, ts > anchorTs)
+		const originalHistory = this.task.apiConversationHistory
+		let apiHistory = [...originalHistory]
+		const targetRole = anchorKind === "user_feedback" ? "user" : "assistant"
+		const apiIndex = apiHistory.findIndex(
+			(m) => m?.role === targetRole && typeof m.ts === "number" && (m.ts as number) > anchorTs,
+		)
+		if (apiIndex !== -1) {
+			apiHistory.splice(apiIndex, 1)
+		}
+
+		// Step 4: Remove Summaries / truncation markers whose UI context events were removed
+		if (removedIds.condenseIds.size > 0) {
+			apiHistory = apiHistory.filter((msg) => {
+				if (msg.isSummary && msg.condenseId && removedIds.condenseIds.has(msg.condenseId)) {
+					console.log(`[MessageManager] Removing orphaned Summary with condenseId: ${msg.condenseId}`)
+					return false
+				}
+				return true
+			})
+		}
+
+		if (removedIds.truncationIds.size > 0) {
+			apiHistory = apiHistory.filter((msg) => {
+				if (msg.isTruncationMarker && msg.truncationId && removedIds.truncationIds.has(msg.truncationId)) {
+					console.log(
+						`[MessageManager] Removing orphaned truncation marker with truncationId: ${msg.truncationId}`,
+					)
+					return false
+				}
+				return true
+			})
+		}
+
+		// Step 5: Cleanup orphaned tags (condenseParent / truncationParent)
+		apiHistory = cleanupAfterTruncation(apiHistory)
+
+		const historyChanged =
+			apiHistory.length !== originalHistory.length || apiHistory.some((msg, i) => msg !== originalHistory[i])
+		if (historyChanged) {
+			await this.task.overwriteApiConversationHistory(apiHistory)
+		}
+
+		return true
+	}
+
 	/**
 	 * Rewind conversation to a specific timestamp.
 	 * This is the SINGLE entry point for all message deletion operations.

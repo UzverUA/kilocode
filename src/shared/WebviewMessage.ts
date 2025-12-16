@@ -30,6 +30,8 @@ export type PromptMode = Mode | "enhance"
 
 export type AudioType = "notification" | "celebration" | "progress_loop"
 
+export type AnchorKind = "api_req_started" | "user_feedback"
+
 export interface UpdateTodoListPayload {
 	todos: any[]
 }
@@ -124,6 +126,7 @@ export interface WebviewMessage {
 		| "enhancedPrompt"
 		| "draggedImages"
 		| "deleteMessage"
+		| "deleteAnchorRange"
 		| "deleteMessageConfirm"
 		| "submitEditedMessage"
 		| "editMessageConfirm"
@@ -300,6 +303,8 @@ export interface WebviewMessage {
 	images?: string[]
 	bool?: boolean
 	value?: number
+	anchorTs?: number
+	anchorKind?: AnchorKind
 	stepIndex?: number
 	isLaunchAction?: boolean
 	forceShow?: boolean

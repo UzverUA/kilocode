@@ -1784,6 +1784,37 @@ export const webviewMessageHandler = async (
 			await handleMessageModificationsOperation(message.value, "delete")
 			break
 		}
+		case "deleteAnchorRange": {
+			const currentTask = provider.getCurrentTask()
+			if (!currentTask) {
+				await vscode.window.showErrorMessage(t("common:errors.message.no_active_task_to_delete"))
+				break
+			}
+
+			const anchorTs = (message as WebviewMessage).anchorTs
+			const anchorKind = (message as WebviewMessage).anchorKind
+			if (typeof anchorTs !== "number") {
+				await vscode.window.showErrorMessage(t("common:errors.message.invalid_timestamp_for_deletion"))
+				break
+			}
+			if (anchorKind !== "api_req_started" && anchorKind !== "user_feedback") {
+				await vscode.window.showErrorMessage("Invalid anchor kind for deletion")
+				break
+			}
+
+			try {
+				await currentTask.messageManager.deleteAnchorRange(anchorTs, anchorKind)
+				await provider.postStateToWebview()
+			} catch (error) {
+				console.error("Error in deleteAnchorRange:", error)
+				vscode.window.showErrorMessage(
+					t("common:errors.message.error_deleting_message", {
+						error: error instanceof Error ? error.message : String(error),
+					}),
+				)
+			}
+			break
+		}
 		case "submitEditedMessage": {
 			if (
 				provider.getCurrentTask() &&
