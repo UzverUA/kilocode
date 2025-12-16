@@ -266,23 +266,31 @@ export const ChatRowContent = ({
 	}, [message.ts])
 
 	// kilocode_change: usageMissing, inferenceProvider
-	const [cost, usageMissing, inferenceProvider, apiReqCancelReason, apiReqStreamingFailedMessage, tokensIn] =
-		useMemo(() => {
-			if (message.text !== null && message.text !== undefined && message.say === "api_req_started") {
-				const info = safeJsonParse<ClineApiReqInfo>(message.text)
-				console.log(info)
-				return [
-					info?.cost,
-					info?.usageMissing,
-					info?.inferenceProvider,
-					info?.cancelReason,
-					info?.streamingFailedMessage,
-					info?.tokensIn,
-				]
-			}
+	const [
+		cost,
+		usageMissing,
+		inferenceProvider,
+		apiReqCancelReason,
+		apiReqStreamingFailedMessage,
+		tokensIn,
+		cacheReads,
+	] = useMemo(() => {
+		if (message.text !== null && message.text !== undefined && message.say === "api_req_started") {
+			const info = safeJsonParse<ClineApiReqInfo>(message.text)
+			console.log(info)
+			return [
+				info?.cost,
+				info?.usageMissing,
+				info?.inferenceProvider,
+				info?.cancelReason,
+				info?.streamingFailedMessage,
+				info?.tokensIn,
+				info?.cacheReads,
+			]
+		}
 
-			return [undefined, undefined, undefined]
-		}, [message.text, message.say])
+		return [undefined, undefined, undefined]
+	}, [message.text, message.say])
 
 	// kilocode_change start: hide cost display check
 	const { hideCostBelowThreshold } = useExtensionState()
@@ -382,7 +390,12 @@ export const ChatRowContent = ({
 							getIconSpan("error", errorColor)
 						)
 					) : cost !== null && cost !== undefined ? (
-						getIconSpan("arrow-swap", normalColor)
+						getIconSpan(
+							"arrow-swap",
+							cacheReads && tokensIn && tokensIn > 0 && cacheReads > tokensIn * 0.5
+								? "#00ffb4"
+								: normalColor,
+						)
 					) : apiRequestFailedMessage ? (
 						getIconSpan("error", errorColor)
 					) : (
@@ -428,6 +441,8 @@ export const ChatRowContent = ({
 		apiRequestFailedMessage,
 		t,
 		inferenceProvider, // kilocode_change
+		tokensIn,
+		cacheReads,
 	])
 
 	const headerStyle: React.CSSProperties = {
@@ -1253,8 +1268,10 @@ export const ChatRowContent = ({
 									<div
 										className="text-xs text-vscode-dropdown-foreground border-vscode-dropdown-border/50 border px-1.5 py-0.5 rounded-lg"
 										style={{ opacity: shouldShowCost ? 1 : 0 }}>
-										{formatLargeNumber(tokensIn || 0)} &nbsp;&nbsp;∣&nbsp;&nbsp; $
-										{Number(cost || 0)?.toFixed(4)}
+										{formatLargeNumber(tokensIn || 0)}
+										&nbsp;&nbsp;∣&nbsp;&nbsp;
+										{tokensIn && cacheReads && Math.round((cacheReads / tokensIn) * 100)}%
+										&nbsp;&nbsp;∣&nbsp;&nbsp; ${Number(cost || 0)?.toFixed(4)}
 									</div>
 									{
 										// kilocode_change start
