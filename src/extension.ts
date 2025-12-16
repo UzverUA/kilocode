@@ -350,6 +350,32 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 	)
 
+	// Register a serializer so editor/tab panels are restored across restarts.
+	context.subscriptions.push(
+		vscode.window.registerWebviewPanelSerializer(ClineProvider.tabPanelId, {
+			async deserializeWebviewPanel(panel: vscode.WebviewPanel, state: unknown) {
+				// Recreate an editor-context provider for this restored panel.
+				let mdmServiceForTab: MdmService | undefined
+				try {
+					mdmServiceForTab = MdmService.getInstance()
+				} catch {
+					mdmServiceForTab = undefined
+				}
+
+				const tabProvider = new ClineProvider(context, outputChannel, "editor", contextProxy, mdmServiceForTab)
+
+				// Match the icon used for freshly created Kilo Code tabs.
+				panel.iconPath = {
+					light: vscode.Uri.joinPath(context.extensionUri, "assets", "icons", "kilo.png"),
+					dark: vscode.Uri.joinPath(context.extensionUri, "assets", "icons", "kilo-dark.png"),
+				}
+
+				// Let the provider wire up the webview just like a newly opened tab.
+				await tabProvider.resolveWebviewView(panel)
+			},
+		}),
+	)
+
 	// kilocode_change start
 	if (!context.globalState.get("firstInstallCompleted")) {
 		outputChannel.appendLine("First installation detected, opening Kilo Code sidebar!")

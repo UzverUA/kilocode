@@ -383,6 +383,7 @@ export const openClineInNewTab = async ({ context, outputChannel }: Omit<Registe
 	// Lock the editor group so clicking on files doesn't open them over the panel.
 	await delay(100)
 	await vscode.commands.executeCommand("workbench.action.lockEditorGroup")
-
+	// Also pin it, so it can't be closed by accident.
+	await vscode.commands.executeCommand("workbench.action.pinEditor")
 	return tabProvider
 }

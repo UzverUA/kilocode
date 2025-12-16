@@ -3482,7 +3482,8 @@ export const webviewMessageHandler = async (
 		// kilocode_change end
 		case "focusPanelRequest": {
 			// Execute the focusPanel command to focus the WebView
-			await vscode.commands.executeCommand(getCommand("focusPanel"))
+			// uz_change - breaks focus logic when using multiple windows of kil
+			// await vscode.commands.executeCommand(getCommand("focusPanel"))
 			break
 		}
 		case "filterMarketplaceItems": {

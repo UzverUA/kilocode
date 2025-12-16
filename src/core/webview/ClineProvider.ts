@@ -181,6 +181,12 @@ export class ClineProvider
 	public readonly providerSettingsManager: ProviderSettingsManager
 	public readonly customModesManager: CustomModesManager
 
+	// Editor-local mode/profile overlay (used when renderContext === "editor")
+	private editorMode?: string
+	private editorModeApiConfigIds?: Record<string, string | undefined>
+	private editorCurrentApiConfigName?: string
+	private editorApiConfiguration?: ProviderSettings
+
 	constructor(
 		readonly context: vscode.ExtensionContext,
 		private readonly outputChannel: vscode.OutputChannel,
@@ -210,6 +216,16 @@ export class ClineProvider
 		this.customModesManager = new CustomModesManager(this.context, async () => {
 			await this.postStateToWebview()
 		})
+
+		if (this.renderContext === "editor") {
+			void this.initializeEditorLocalState().catch((error) => {
+				this.log(
+					`Failed to init editor-local mode/model state: ${
+						error instanceof Error ? error.message : String(error)
+					}`,
+				)
+			})
+		}
 
 		// Initialize MCP Hub through the singleton manager
 		McpServerManager.getInstance(this.context, this)
@@ -1002,30 +1018,60 @@ ${prompt}
 				historyItem.mode = defaultModeSlug
 			}
 
-			await this.updateGlobalState("mode", historyItem.mode)
+			if (this.renderContext === "sidebar") {
+				await this.updateGlobalState("mode", historyItem.mode)
 
-			// Load the saved API config for the restored mode if it exists.
-			const savedConfigId = await this.providerSettingsManager.getModeConfigId(historyItem.mode)
-			const listApiConfig = await this.providerSettingsManager.listConfig()
+				// Load the saved API config for the restored mode if it exists.
+				const savedConfigId = await this.providerSettingsManager.getModeConfigId(historyItem.mode)
+				const listApiConfig = await this.providerSettingsManager.listConfig()
 
-			// Update listApiConfigMeta first to ensure UI has latest data.
-			await this.updateGlobalState("listApiConfigMeta", listApiConfig)
+				// Update listApiConfigMeta first to ensure UI has latest data.
+				await this.updateGlobalState("listApiConfigMeta", listApiConfig)
 
-			// If this mode has a saved config, use it.
-			if (savedConfigId) {
-				const profile = listApiConfig.find(({ id }) => id === savedConfigId)
+				// If this mode has a saved config, use it.
+				if (savedConfigId) {
+					const profile = listApiConfig.find(({ id }) => id === savedConfigId)
 
-				if (profile?.name) {
-					try {
-						await this.activateProviderProfile({ name: profile.name })
-					} catch (error) {
-						// Log the error but continue with task restoration.
-						this.log(
-							`Failed to restore API configuration for mode '${historyItem.mode}': ${
-								error instanceof Error ? error.message : String(error)
-							}. Continuing with default configuration.`,
-						)
-						// The task will continue with the current/default configuration.
+					if (profile?.name) {
+						try {
+							await this.activateProviderProfile({ name: profile.name })
+						} catch (error) {
+							// Log the error but continue with task restoration.
+							this.log(
+								`Failed to restore API configuration for mode '${historyItem.mode}': ${
+									error instanceof Error ? error.message : String(error)
+								}. Continuing with default configuration.`,
+							)
+							// The task will continue with the current/default configuration.
+						}
+					}
+				}
+			} else {
+				// Editor: set local mode/profile without mutating global mode
+				const mode = historyItem.mode
+				this.editorMode = mode
+
+				if (!this.editorModeApiConfigIds) {
+					this.editorModeApiConfigIds = {}
+				}
+
+				// Resolve config id for this mode (prefer editor-local mapping, then global mapping)
+				let configId = this.editorModeApiConfigIds[mode]
+				if (!configId) {
+					configId = await this.providerSettingsManager.getModeConfigId(mode)
+				}
+
+				const listApiConfig = await this.providerSettingsManager.listConfig()
+				await this.updateGlobalState("listApiConfigMeta", listApiConfig)
+
+				if (configId) {
+					const profileMeta = listApiConfig.find(({ id }) => id === configId)
+					if (profileMeta) {
+						const profile = await this.providerSettingsManager.getProfile({ id: profileMeta.id })
+						this.editorModeApiConfigIds[mode] = profileMeta.id
+						this.editorCurrentApiConfigName = profileMeta.name
+						this.editorApiConfiguration = profile
+						this.updateTaskApiHandlerIfNeeded(profile, { forceRebuild: true })
 					}
 				}
 			}
@@ -1390,7 +1436,9 @@ ${prompt}
 	/* kilocode_change end */
 
 	/**
-	 * Handle switching to a new mode, including updating the associated API configuration
+	 * Handle switching to a new mode, including updating the associated API configuration.
+	 * For sidebar providers, this updates global mode and mode->profile mapping.
+	 * For editor providers, this only updates editor-local overlays.
 	 * @param newMode The mode to switch to
 	 */
 	public async handleModeSwitch(newMode: Mode) {
@@ -1424,6 +1472,14 @@ ${prompt}
 			}
 		}
 
+		if (this.renderContext === "sidebar") {
+			await this.handleGlobalModeSwitch(newMode)
+		} else {
+			await this.handleEditorLocalModeSwitch(newMode)
+		}
+	}
+
+	private async handleGlobalModeSwitch(newMode: Mode): Promise<void> {
 		await this.updateGlobalState("mode", newMode)
 
 		this.emit(RooCodeEventName.ModeChanged, newMode)
@@ -1455,6 +1511,53 @@ ${prompt}
 			}
 		}
 
+		await this.postStateToWebview()
+	}
+
+	private async handleEditorLocalModeSwitch(newMode: Mode): Promise<void> {
+		// Update editor-local mode value
+		this.editorMode = newMode
+
+		// Ensure local dictionary exists
+		if (!this.editorModeApiConfigIds) {
+			this.editorModeApiConfigIds = {}
+		}
+
+		// Find existing local config id for this mode, or fall back to global per-mode mapping
+		let configId = this.editorModeApiConfigIds[newMode as string]
+
+		if (!configId) {
+			configId = await this.providerSettingsManager.getModeConfigId(newMode)
+		}
+
+		const listApiConfig = await this.providerSettingsManager.listConfig()
+		const profileMeta = configId ? listApiConfig.find((p) => p.id === configId) : undefined
+
+		let profile: ProviderSettings
+
+		if (profileMeta) {
+			profile = await this.providerSettingsManager.getProfile({ id: profileMeta.id })
+			this.editorCurrentApiConfigName = profileMeta.name
+			this.editorModeApiConfigIds[newMode as string] = profileMeta.id
+		} else {
+			// Fallback to the current editor/local configuration if present, otherwise use a
+			// fresh snapshot of the global provider settings.
+			if (this.editorApiConfiguration) {
+				profile = this.editorApiConfiguration
+			} else {
+				const globalProviderSettings = this.contextProxy.getProviderSettings()
+				profile = globalProviderSettings
+				const globalValues = this.contextProxy.getValues()
+				this.editorCurrentApiConfigName = (globalValues.currentApiConfigName ?? "default") as string
+			}
+		}
+
+		this.editorApiConfiguration = profile
+
+		// Update current task API handler using this local profile
+		this.updateTaskApiHandlerIfNeeded(profile, { forceRebuild: true })
+
+		this.emit(RooCodeEventName.ModeChanged, newMode)
 		await this.postStateToWebview()
 	}
 
@@ -1528,57 +1631,67 @@ ${prompt}
 		activate: boolean = true,
 	): Promise<string | undefined> {
 		try {
-			// TODO: Do we need to be calling `activateProfile`? It's not
-			// clear to me what the source of truth should be; in some cases
-			// we rely on the `ContextProxy`'s data store and in other cases
-			// we rely on the `ProviderSettingsManager`'s data store. It might
-			// be simpler to unify these two.
+			// Persist/update the profile definition globally via ProviderSettingsManager.
 			const id = await this.providerSettingsManager.saveConfig(name, providerSettings)
 
+			// Keep the global list of profiles up to date for all providers.
+			await this.updateGlobalState("listApiConfigMeta", await this.providerSettingsManager.listConfig())
+
 			if (activate) {
-				const { mode } = await this.getState()
+				if (this.renderContext === "sidebar") {
+					const { mode } = await this.getState()
 
-				// These promises do the following:
-				// 1. Adds or updates the list of provider profiles.
-				// 2. Sets the current provider profile.
-				// 3. Sets the current mode's provider profile.
-				// 4. Copies the provider settings to the context.
-				//
-				// Note: 1, 2, and 4 can be done in one `ContextProxy` call:
-				// this.contextProxy.setValues({ ...providerSettings, listApiConfigMeta: ..., currentApiConfigName: ... })
-				// We should probably switch to that and verify that it works.
-				// I left the original implementation in just to be safe.
-				await Promise.all([
-					this.updateGlobalState("listApiConfigMeta", await this.providerSettingsManager.listConfig()),
-					this.updateGlobalState("currentApiConfigName", name),
-					this.providerSettingsManager.setModeConfig(mode, id),
-					this.contextProxy.setProviderSettings(providerSettings),
-				])
+					// Sidebar: update global active profile and per-mode mapping.
+					await Promise.all([
+						this.updateGlobalState("currentApiConfigName", name),
+						this.providerSettingsManager.setModeConfig(mode, id),
+						this.contextProxy.setProviderSettings(providerSettings),
+					])
 
-				// Credits widget edits start
-				const oldOrgId = this.contextProxy.getProviderSettings().kilocodeOrganizationId
-				const newOrgId = providerSettings.kilocodeOrganizationId
-				if (oldOrgId !== newOrgId && this.creditsStatusBar) {
-					this.log(
-						`[upsertProviderProfile] Organization ID changed from ${oldOrgId} to ${newOrgId}, notifying CreditsStatusBar`,
-					)
-					await this.creditsStatusBar.clearAndRefresh()
+					// Credits widget edits start (global only)
+					const oldOrgId = this.contextProxy.getProviderSettings().kilocodeOrganizationId
+					const newOrgId = providerSettings.kilocodeOrganizationId
+					if (oldOrgId !== newOrgId && this.creditsStatusBar) {
+						this.log(
+							`[upsertProviderProfile] Organization ID changed from ${oldOrgId} to ${newOrgId}, notifying CreditsStatusBar`,
+						)
+						await this.creditsStatusBar.clearAndRefresh()
+					}
+					// Credits widget edits end
+
+					// Change the provider for the current task.
+					// TODO: We should rename `buildApiHandler` for clarity (e.g. `getProviderClient`).
+					const task = this.getCurrentTask()
+
+					if (task) {
+						task.api = buildApiHandler(providerSettings)
+					}
+
+					await TelemetryService.instance.updateIdentity(providerSettings.kilocodeToken ?? "") // kilocode_change
+
+					this.updateTaskApiHandlerIfNeeded(providerSettings, { forceRebuild: true })
+				} else {
+					// Editor: keep profile definition global, but activate it only in this editor instance.
+					const state = await this.getState()
+					const currentMode = this.editorMode ?? state.mode ?? defaultModeSlug
+
+					if (!this.editorModeApiConfigIds) {
+						this.editorModeApiConfigIds = {}
+					}
+
+					this.editorModeApiConfigIds[currentMode as string] = id
+					this.editorCurrentApiConfigName = name
+					this.editorApiConfiguration = providerSettings
+
+					const task = this.getCurrentTask()
+					if (task) {
+						task.api = buildApiHandler(providerSettings)
+					}
+
+					await TelemetryService.instance.updateIdentity(providerSettings.kilocodeToken ?? "") // kilocode_change
+
+					this.updateTaskApiHandlerIfNeeded(providerSettings, { forceRebuild: true })
 				}
-				// Credits widget edits end
-
-				// Change the provider for the current task.
-				// TODO: We should rename `buildApiHandler` for clarity (e.g. `getProviderClient`).
-				const task = this.getCurrentTask()
-
-				if (task) {
-					task.api = buildApiHandler(providerSettings)
-				}
-
-				await TelemetryService.instance.updateIdentity(providerSettings.kilocodeToken ?? "") // kilocode_change
-
-				this.updateTaskApiHandlerIfNeeded(providerSettings, { forceRebuild: true })
-			} else {
-				await this.updateGlobalState("listApiConfigMeta", await this.providerSettingsManager.listConfig())
 			}
 
 			await this.postStateToWebview()
@@ -1619,19 +1732,36 @@ ${prompt}
 	async activateProviderProfile(args: { name: string } | { id: string }) {
 		const { name, id, ...providerSettings } = await this.providerSettingsManager.activateProfile(args)
 
-		// See `upsertProviderProfile` for a description of what this is doing.
-		await Promise.all([
-			this.contextProxy.setValue("listApiConfigMeta", await this.providerSettingsManager.listConfig()),
-			this.contextProxy.setValue("currentApiConfigName", name),
-			this.contextProxy.setProviderSettings(providerSettings),
-		])
+		// Keep global profile list in sync for all providers.
+		await this.contextProxy.setValue("listApiConfigMeta", await this.providerSettingsManager.listConfig())
 
-		const { mode } = await this.getState()
+		if (this.renderContext === "sidebar") {
+			// Sidebar: update global active profile and per-mode mapping.
+			await this.contextProxy.setValue("currentApiConfigName", name)
+			await this.contextProxy.setProviderSettings(providerSettings)
 
-		if (id) {
-			await this.providerSettingsManager.setModeConfig(mode, id)
+			const { mode } = await this.getState()
+			if (id) {
+				await this.providerSettingsManager.setModeConfig(mode, id)
+			}
+		} else {
+			// Editor: activate profile only in this editor instance.
+			const state = await this.getState()
+			const currentMode = this.editorMode ?? state.mode ?? defaultModeSlug
+
+			if (!this.editorModeApiConfigIds) {
+				this.editorModeApiConfigIds = {}
+			}
+
+			if (id) {
+				this.editorModeApiConfigIds[currentMode as string] = id
+			}
+
+			this.editorCurrentApiConfigName = name
+			this.editorApiConfiguration = providerSettings
 		}
-		// Change the provider for the current task.
+
+		// Change the provider for the current task using the (global or editor-local) providerSettings.
 		this.updateTaskApiHandlerIfNeeded(providerSettings, { forceRebuild: true })
 
 		await this.postStateToWebview()
@@ -2465,6 +2595,39 @@ ${prompt}
 		}
 	}
 
+	private async initializeEditorLocalState(): Promise<void> {
+		try {
+			const state = await this.getState()
+
+			// Start with global mode and per-mode profile ids
+			this.editorMode = state.mode ?? defaultModeSlug
+
+			const globalModeApiConfigs = (state.modeApiConfigs ?? {}) as Record<string, string>
+			this.editorModeApiConfigIds = { ...globalModeApiConfigs }
+
+			const activeProfileId = this.editorModeApiConfigIds[this.editorMode]
+
+			const listApiConfig = await this.providerSettingsManager.listConfig()
+			const activeProfileMeta = activeProfileId
+				? listApiConfig.find((p) => p.id === activeProfileId)
+				: listApiConfig.find((p) => p.name === state.currentApiConfigName)
+
+			if (activeProfileMeta) {
+				const profile = await this.providerSettingsManager.getProfile({ id: activeProfileMeta.id })
+
+				this.editorCurrentApiConfigName = profile.name
+				this.editorApiConfiguration = profile
+			} else {
+				this.editorCurrentApiConfigName = state.currentApiConfigName
+				this.editorApiConfiguration = state.apiConfiguration
+			}
+		} catch (error) {
+			this.log(
+				`Failed to initialize editor-local state: ${error instanceof Error ? error.message : String(error)}`,
+			)
+		}
+	}
+
 	/**
 	 * Storage
 	 * https://dev.to/kompotkot/how-to-use-secretstorage-in-your-vscode-extensions-2hco
@@ -2498,6 +2661,20 @@ ${prompt}
 		// Ensure apiProvider is set properly if not already in state
 		if (!providerSettings.apiProvider) {
 			providerSettings.apiProvider = apiProvider
+		}
+
+		// Base/global values
+		let mode = stateValues.mode ?? defaultModeSlug
+		let apiConfiguration = providerSettings
+		let currentApiConfigName = stateValues.currentApiConfigName ?? "default"
+		let modeApiConfigs = stateValues.modeApiConfigs ?? ({} as Record<Mode, string>)
+
+		// For editor providers, overlay editor-local mode/profile state once initialized
+		if (this.renderContext === "editor" && this.editorModeApiConfigIds && this.editorApiConfiguration) {
+			mode = this.editorMode ?? mode
+			apiConfiguration = this.editorApiConfiguration
+			currentApiConfigName = this.editorCurrentApiConfigName ?? currentApiConfigName
+			modeApiConfigs = this.editorModeApiConfigIds as Record<Mode, string>
 		}
 
 		let organizationAllowList = ORGANIZATION_ALLOW_ALL
@@ -2566,9 +2743,9 @@ ${prompt}
 		// Get actual browser session state
 		const isBrowserSessionActive = this.getCurrentTask()?.browserSession?.isSessionActive() ?? false
 
-		// Return the same structure as before.
+		// Return the same structure as before, with possible editor-local overrides applied above.
 		return {
-			apiConfiguration: providerSettings,
+			apiConfiguration,
 			kilocodeDefaultModel: await getKilocodeDefaultModel(
 				providerSettings.kilocodeToken,
 				providerSettings.kilocodeOrganizationId,
@@ -2627,17 +2804,17 @@ ${prompt}
 			terminalZshP10k: stateValues.terminalZshP10k ?? false,
 			terminalZdotdir: stateValues.terminalZdotdir ?? false,
 			terminalCompressProgressBar: stateValues.terminalCompressProgressBar ?? true,
-			mode: stateValues.mode ?? defaultModeSlug,
+			mode,
 			language: stateValues.language ?? formatLanguage(vscode.env.language),
 			mcpEnabled: true, // kilocode_change: always true
 			enableMcpServerCreation: stateValues.enableMcpServerCreation ?? true,
 			mcpServers: this.mcpHub?.getAllServers() ?? [],
 			alwaysApproveResubmit: stateValues.alwaysApproveResubmit ?? false,
 			requestDelaySeconds: Math.max(5, stateValues.requestDelaySeconds ?? 10),
-			currentApiConfigName: stateValues.currentApiConfigName ?? "default",
+			currentApiConfigName,
 			listApiConfigMeta: stateValues.listApiConfigMeta ?? [],
 			pinnedApiConfigs: stateValues.pinnedApiConfigs ?? {},
-			modeApiConfigs: stateValues.modeApiConfigs ?? ({} as Record<Mode, string>),
+			modeApiConfigs,
 			customModePrompts: stateValues.customModePrompts ?? {},
 			customSupportPrompts: stateValues.customSupportPrompts ?? {},
 			enhancementApiConfigId: stateValues.enhancementApiConfigId,
@@ -3256,7 +3433,8 @@ ${prompt}
 	}
 
 	public async setMode(mode: string): Promise<void> {
-		await this.setValues({ mode })
+		// Route through handleModeSwitch so sidebar vs editor behavior is respected.
+		await this.handleModeSwitch(mode as Mode)
 	}
 
 	// Provider Profiles
