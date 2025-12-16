@@ -6,7 +6,7 @@ interface FileDiff {
 	changeCount: number
 	key: string
 	content: string
-	diffStats?: { added: number; removed: number }
+	diffStats?: { added: number; removed: number; failed?: number }
 	diffs?: Array<{
 		content: string
 		startLine?: number

@@ -567,7 +567,7 @@ export interface ClineSayTool {
 	diff?: string
 	content?: string
 	// Unified diff statistics computed by the extension
-	diffStats?: { added: number; removed: number }
+	diffStats?: { added: number; removed: number; failed?: number }
 	regex?: string
 	filePattern?: string
 	mode?: string
@@ -598,7 +598,7 @@ export interface ClineSayTool {
 		key: string
 		content: string
 		// Per-file unified diff statistics computed by the extension
-		diffStats?: { added: number; removed: number }
+		diffStats?: { added: number; removed: number; failed?: number }
 		diffs?: Array<{
 			content: string
 			startLine?: number

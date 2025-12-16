@@ -8,6 +8,7 @@ import { parsePatch, createTwoFilesPatch } from "diff"
 export interface DiffStats {
 	added: number
 	removed: number
+	failed?: number
 }
 
 /**
@@ -40,9 +41,8 @@ export function computeUnifiedDiffStats(diff?: string): DiffStats | null {
 				}
 			}
 		}
-
-		if (added > 0 || removed > 0) return { added, removed }
-		return { added: 0, removed: 0 }
+		if (added > 0 || removed > 0) return { added, removed, failed: 0 }
+		return { added: 0, removed: 0, failed: 0 }
 	} catch {
 		// If parsing fails for any reason, signal no stats
 		return null

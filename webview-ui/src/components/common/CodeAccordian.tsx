@@ -21,7 +21,7 @@ interface CodeAccordianProps {
 	header?: string
 	onJumpToFile?: () => void
 	// New props for diff stats
-	diffStats?: { added: number; removed: number }
+	diffStats?: { added: number; removed: number; failed?: number }
 }
 
 const CodeAccordian = ({
@@ -43,11 +43,14 @@ const CodeAccordian = ({
 
 	// Use provided diff stats only (render-only)
 	const derivedStats = useMemo(() => {
-		if (diffStats && (diffStats.added > 0 || diffStats.removed > 0)) return diffStats
+		if (diffStats && (diffStats.added > 0 || diffStats.removed > 0)) {
+			return { ...diffStats, failed: diffStats.failed ?? 0 }
+		}
 		return null
 	}, [diffStats])
 
 	const hasValidStats = Boolean(derivedStats && (derivedStats.added > 0 || derivedStats.removed > 0))
+	const hasFailedPatches = Boolean(derivedStats && derivedStats.failed > 0)
 
 	return (
 		<ToolUseBlock>
@@ -84,6 +87,11 @@ const CodeAccordian = ({
 						<div className="flex items-center gap-2 mr-1">
 							<span className="text-xs font-medium text-vscode-charts-green">+{derivedStats!.added}</span>
 							<span className="text-xs font-medium text-vscode-charts-red">-{derivedStats!.removed}</span>
+							{hasFailedPatches && (
+								<span className="text-xs font-medium text-vscode-errorForeground flex items-center gap-0.5">
+									&gt;&gt; ❌{derivedStats!.failed}
+								</span>
+							)}
 						</div>
 					) : (
 						progressStatus &&

@@ -130,7 +130,9 @@ export class ApplyDiffTool extends BaseTool<"apply_diff"> {
 			// Generate backend-unified diff for display in chat/webview
 			const unifiedPatchRaw = formatResponse.createPrettyPatch(relPath, originalContent, diffResult.content)
 			const unifiedPatch = sanitizeUnifiedDiff(unifiedPatchRaw)
-			const diffStats = computeDiffStats(unifiedPatch) || undefined
+			const baseStats = computeDiffStats(unifiedPatch) || undefined
+			let failedCount = diffResult.failParts ? diffResult.failParts.length : 0
+			const diffStats = baseStats !== undefined ? { ...baseStats, successful: 0, failed: failedCount } : undefined
 
 			// Check if preventFocusDisruption experiment is enabled
 			const provider = task.providerRef.deref()
