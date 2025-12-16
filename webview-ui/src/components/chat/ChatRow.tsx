@@ -1300,9 +1300,9 @@ export const ChatRowContent = ({
 										className="text-xs text-vscode-dropdown-foreground border-vscode-dropdown-border/50 border px-1.5 py-0.5 rounded-lg"
 										style={{ opacity: shouldShowCost ? 1 : 0 }}>
 										{formatLargeNumber(tokensIn || 0)}
-										&nbsp;&nbsp;∣&nbsp;&nbsp;
+										&nbsp;&nbsp;&nbsp;∣&nbsp;&nbsp;&nbsp;
 										{tokensIn && cacheReads && Math.round((cacheReads / tokensIn) * 100)}%
-										&nbsp;&nbsp;∣&nbsp;&nbsp; ${Number(cost || 0)?.toFixed(4)}
+										&nbsp;&nbsp;∣&nbsp;&nbsp;&nbsp;${Number(cost || 0)?.toFixed(4)}
 									</div>
 									{
 										// kilocode_change start
