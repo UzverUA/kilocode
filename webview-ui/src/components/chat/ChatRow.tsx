@@ -930,6 +930,7 @@ export const ChatRowContent = ({
 						</div>
 					</>
 				)
+			case "agenticDiffApply":
 			case "agenticSearch":
 			case "newTask":
 				return (
@@ -968,9 +969,31 @@ export const ChatRowContent = ({
 								<span className="codicon codicon-arrow-right"></span>
 								{t("chat:subtasks.newTaskContent")}
 							</div>
-							<div style={{ padding: "12px 16px", backgroundColor: "var(--vscode-editor-background)" }}>
-								<MarkdownBlock markdown={tool.content} />
-							</div>
+							{tool.tool === "agenticDiffApply" ? (
+								<div
+									style={{
+										backgroundColor: "var(--vscode-editor-background)",
+										border: "1px solid var(--vscode-editorGroup-border)",
+										borderRadius: "4px",
+										overflow: "auto",
+										marginBottom: "8px",
+										padding: "8px 10px",
+										fontFamily: "var(--vscode-editor-font-family, monospace)",
+										fontSize: "12px",
+										lineHeight: "1.3",
+										whiteSpace: "pre",
+									}}>
+									{tool.content}
+								</div>
+							) : (
+								<div
+									style={{
+										padding: "12px 16px",
+										backgroundColor: "var(--vscode-editor-background)",
+									}}>
+									<MarkdownBlock markdown={tool.content} />
+								</div>
+							)}
 						</div>
 					</>
 				)

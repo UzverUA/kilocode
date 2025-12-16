@@ -163,7 +163,7 @@ export async function checkAutoApproval({
 		}
 
 		// Treat agentic search tool uses as subtasks as well so they can be auto-approved
-		if (["newTask", "finishTask", "agenticSearch", "agentic_search"].includes(tool?.tool)) {
+		if (["newTask", "finishTask", "agenticSearch", "agentic_apply_diff"].includes(tool?.tool)) {
 			return state.alwaysAllowSubtasks === true ? { decision: "approve" } : { decision: "ask" }
 		}
 

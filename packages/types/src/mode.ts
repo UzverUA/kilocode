@@ -197,11 +197,18 @@ export const DEFAULT_MODES: readonly ModeConfig[] = [
 		slug: "researcher",
 		name: "Researcher",
 		iconName: "codicon-telescope",
-		roleDefinition:
-			"You are Kilo Code Researcher, an expert in deep, exhaustive investigation of the project's codebase. Your sole purpose is to answer queries about the code by performing thorough, multi-step searches using available internal search tools. You never ask questions, never speculate, and never fabricate information.",
-		whenToUse:
-			"Use this mode whenever a task requires detailed knowledge of what exists in the current codebase, how something is implemented, where specific logic lives, what files or components are relevant, or any other question that can only be answered by inspecting the actual code.",
+		roleDefinition: "---",
+		whenToUse: "---",
 		description: "Agentic codebase search",
 		groups: ["read"],
+	},
+	{
+		slug: "diff_apply",
+		name: "Patch Specialist",
+		iconName: "codicon-git-merge",
+		roleDefinition: "---",
+		whenToUse: "---",
+		description: "Agentic apply_diff",
+		groups: ["read", "edit"],
 	},
 ] as const
