@@ -6,7 +6,7 @@ import { ExportButton } from "./ExportButton"
 import { DeleteButton } from "./DeleteButton"
 import { FavoriteButton } from "../kilocode/history/FavoriteButton" // kilocode_change
 import { CompletedButton } from "../kilocode/history/CompletedButton" // kilocode_change
-import { KiloShareSessionButton } from "./KiloShareSessionButton" // kilocode_change
+// import { KiloShareSessionButton } from "./KiloShareSessionButton" // kilocode_change
 import { StandardTooltip } from "../ui/standard-tooltip"
 import { formatLargeNumber } from "@src/utils/format"
 
@@ -44,7 +44,7 @@ const TaskItemFooter: React.FC<TaskItemFooterProps> = ({ item, variant, isSelect
 					<CompletedButton isCompleted={item.isCompleted ?? false} id={item.id} />
 					<FavoriteButton isFavorited={item.isFavorited ?? false} id={item.id} />
 					<CopyButton itemTask={item.task} />
-					<KiloShareSessionButton id={item.id} />
+					{/* <KiloShareSessionButton id={item.id} /> */}
 					{variant === "full" && <ExportButton itemId={item.id} />}
 					{onDelete && <DeleteButton itemId={item.id} onDelete={onDelete} />}
 				</div>
